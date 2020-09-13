@@ -6,8 +6,8 @@
 SoftwareSerial serialPort(9,10); //Rx and Tx
 
 float tankheight = 121; //4 feet
-long calibrationvalue = 3;
-long sensorrestorecalibration = 3;
+long calibrationvalue = 21;
+long sensorrestorecalibration;
 float tankwidth = 152; //5 feet
 float tanklength = 137; //4.5 feet
 
@@ -19,6 +19,7 @@ void setup() {
   Serial.println("----------------SETUP INITIATED--------------------------");
   pinMode(trigger, OUTPUT);
   pinMode(echo, INPUT);
+  sensorrestorecalibration = calibrationvalue;
   Serial.println("----------------SETUP COMPLETED--------------------------");
 }
   
@@ -74,6 +75,8 @@ void checkWaterLevel(JsonObject& root) {
   int waterlevelat=0;
   if(distance > 0) {
     waterlevelat = tankheight - distance + calibrationvalue;
+    Serial.println(calibrationvalue);
+    Serial.println("calibration value printed above");
   }
   Serial.println("Waterlevelat");
   Serial.println(waterlevelat);
