@@ -10,12 +10,12 @@ char auth[] = "DYLNiU66yHBL8I09OrJ0g5X4r_AbS66J";
 
 // Your WiFi credentials.
 // Set password to "" for open networks.
-char ssid[] = "Cijaiz_Home";
-char pass[] = "M00n5050";
+// char ssid[] = "Cijaiz_Home";
+// char pass[] = "M00n5050";
 //char ssid[] = "Galaxy A719DBD";
 //char pass[] = "mygalaxya71";
-//char ssid[] = "Cijaiz complex";
-//char pass[] = "9000150001";
+char ssid[] = "Cijaiz complex";
+char pass[] = "9000150001";
 
 BlynkTimer timer;
 long systemUptime, uptimesec;
