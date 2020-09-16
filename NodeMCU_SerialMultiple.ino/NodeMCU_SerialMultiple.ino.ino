@@ -6,6 +6,8 @@ SoftwareSerial serialPort(D1,D0);
 #include <ESP8266WiFi.h>
 #include <BlynkSimpleEsp8266.h>
 
+WidgetBridge bridge(V0);
+
 char auth[] = "DYLNiU66yHBL8I09OrJ0g5X4r_AbS66J";
 
 // Your WiFi credentials.
@@ -34,6 +36,10 @@ void setup() {
   while (!Serial) continue;
 }
 
+BLYNK_CONNECTED() {
+  bridge.setAuthToken("ODbXgkyA-fZohqppkwa0qm8QusGnDXCa");
+}
+
 void ExtractSensorData() {
   StaticJsonBuffer<1000> jsonBuffer;
   JsonObject& root = jsonBuffer.parseObject(serialPort);
@@ -41,21 +47,21 @@ void ExtractSensorData() {
   long uptimemls = millis();
   uptimesec = uptimemls/1000;
   
-  Serial.println("Esp uptime ");
-  Serial.println(uptimesec);
+//  Serial.println("Esp uptime ");
+//  Serial.println(uptimesec);
 
   if (!serialPort.available() > 0) {
     //Serial.println("received Data");
     distance = -100;
-    Serial.println("Didnt Receive Data");
+//    Serial.println("Didnt Receive Data");
   }  
   
   if(root == JsonObject::invalid()) 
     return;
 
-  Serial.println("JSON Received and Parsed");
-  root.prettyPrintTo(Serial);
-  Serial.println("");
+//  Serial.println("JSON Received and Parsed");
+//  root.prettyPrintTo(Serial);
+//  Serial.println("");
 
   systemUptime=root["ArduinoUptime"];
   distance=root["SensorDistance"];
@@ -93,6 +99,9 @@ void uploadtoBlynk(){
   Blynk.virtualWrite(V3, availableLitres);
   Blynk.virtualWrite(V5, systemUptime);  
   Blynk.virtualWrite(V10, uptimesec);
+
+  //Bridge Transmit
+  bridge.virtualWrite(V0, tankPercentage);
 }
 
 void loop() {
