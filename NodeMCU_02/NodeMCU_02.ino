@@ -17,15 +17,31 @@ char auth[] = "ODbXgkyA-fZohqppkwa0qm8QusGnDXCa";
 char ssid[] = "Cijaiz complex";
 char pass[] = "9000150001";
 
+bool isTankLowEmailSent = false;
+bool isTankFullEmailSent = false;
+
 void setup() {
   Blynk.begin(auth, ssid, pass);
     
   Serial.begin(9600);
 }
 
+BLYNK_CONNECTED(){
+  Blynk.email("Successfully Connected", "Secondary Connected");
+}
+
 BLYNK_WRITE(V0) {
   int compressorTankPercentage = param.asInt();
   Blynk.virtualWrite(V10, compressorTankPercentage);
+
+  if(!isTankLowEmailSent && compressorTankPercentage < 40) {
+    Blynk.email("Compressor Tank", "Quarter Level reached. Please Refill.");
+    isTankLowEmailSent = true;
+  }
+  if(!isTankFullEmailSent && compressorTankPercentage > 95) {
+    Blynk.email("Compressor Tank", "Compressor Tank is Full");
+    isTankFullEmailSent = true;
+  }
 }
 
 void loop() {
