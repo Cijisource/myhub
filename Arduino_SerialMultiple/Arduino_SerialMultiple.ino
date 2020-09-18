@@ -1,13 +1,18 @@
-#define trigger 7
-#define echo 6
+#define strigger 7
+#define secho 6
+#define ctrigger 5
+#define cecho 4
 
 #include <SoftwareSerial.h>
 #include <ArduinoJson.h>
 SoftwareSerial serialPort(9,10); //Rx and Tx
 
 float tankheight = 121; //4 feet
-long calibrationvalue = 21;
-long sensorrestorecalibration;
+long scalibrationvalue = 21;
+long ssensorrestorecalibration;
+long ccalibrationvalue = 21;
+long csensorrestorecalibration;
+
 float tankwidth = 152; //5 feet
 float tanklength = 137; //4.5 feet
 
@@ -17,9 +22,13 @@ void setup() {
   serialPort.begin(115200);
   Serial.begin(115200);
   Serial.println("----------------SETUP INITIATED--------------------------");
-  pinMode(trigger, OUTPUT);
-  pinMode(echo, INPUT);
-  sensorrestorecalibration = calibrationvalue;
+  pinMode(strigger, OUTPUT);
+  pinMode(secho, INPUT);
+  pinMode(ctrigger, OUTPUT);
+  pinMode(cecho, INPUT);
+  ssensorrestorecalibration = scalibrationvalue;
+  csensorrestorecalibration = ccalibrationvalue;
+  
   Serial.println("----------------SETUP COMPLETED--------------------------");
 }
   
@@ -32,7 +41,9 @@ void loop() {
   JsonObject& root = jsonBuffer.createObject();
   root["ArduinoUptime"] = uptimesec;
   
-  checkWaterLevel(root);
+  checkWaterLevelInCompressorTank(root);
+  checkWaterLevelInCementTank(root);
+  
 //  if(serialPort.available()>0)
 //  {
     root.printTo(serialPort);
@@ -40,42 +51,42 @@ void loop() {
   delay(1000);
 }
 
-void checkWaterLevel(JsonObject& root) {
+void checkWaterLevelInCompressorTank(JsonObject& root) {
   long duration, distance;
   float tanklevelpercentage = 0;
 
-  digitalWrite(trigger, LOW);  
+  digitalWrite(strigger, LOW);  
   delayMicroseconds(2); 
   
-  digitalWrite(trigger, HIGH);
+  digitalWrite(strigger, HIGH);
   delayMicroseconds(10); 
   
-  digitalWrite(trigger, LOW);
-  duration = pulseIn(echo, HIGH);
+  digitalWrite(strigger, LOW);
+  duration = pulseIn(secho, HIGH);
   distance = (duration/2) / 29.1;
   
-  Serial.println("duration");
+  Serial.println("Compressor duration");
   Serial.println(duration);
 
-  Serial.println("distance");
+  Serial.println("Compressor distance");
   Serial.println(distance);
   
   //Blynk.virtualWrite(V1, distance);
   root["SensorDistance"] = distance;
   
-  calibrationvalue = sensorrestorecalibration;
-  if(distance > (tankheight + calibrationvalue)) {
+  scalibrationvalue = ssensorrestorecalibration;
+  if(distance > (tankheight + scalibrationvalue)) {
     Serial.println(distance);
     distance = tankheight;
-    calibrationvalue = 0;
+    scalibrationvalue = 0;
   } 
-  measureWater(distance, root);
-  consumedWater(distance, root);
+  measureWater(distance, scalibrationvalue, root);
+  consumedWater(distance, scalibrationvalue, root);
 
   int waterlevelat=0;
   if(distance > 0) {
-    waterlevelat = tankheight - distance + calibrationvalue;
-    Serial.println(calibrationvalue);
+    waterlevelat = tankheight - distance + scalibrationvalue;
+    Serial.println(scalibrationvalue);
     Serial.println("calibration value printed above");
   }
   Serial.println("Waterlevelat");
@@ -94,7 +105,61 @@ void checkWaterLevel(JsonObject& root) {
   //Blynk.virtualWrite(V5, uptimesec);
 }
 
-void measureWater(int distance, JsonObject& root) {
+void checkWaterLevelInCementTank(JsonObject& root) {
+  long duration, distance;
+  float tanklevelpercentage = 0;
+
+  digitalWrite(ctrigger, LOW);  
+  delayMicroseconds(2); 
+  
+  digitalWrite(ctrigger, HIGH);
+  delayMicroseconds(10); 
+  
+  digitalWrite(ctrigger, LOW);
+  duration = pulseIn(cecho, HIGH);
+  distance = (duration/2) / 29.1;
+  
+  Serial.println("cement duration");
+  Serial.println(duration);
+
+  Serial.println("cement distance");
+  Serial.println(distance);
+  
+  //Blynk.virtualWrite(V1, distance);
+  root["SensorDistance"] = distance;
+  
+  ccalibrationvalue = csensorrestorecalibration;
+  if(distance > (tankheight + ccalibrationvalue)) {
+    Serial.println(distance);
+    distance = tankheight;
+    ccalibrationvalue = 0;
+  } 
+  measureWater(distance, ccalibrationvalue, root);
+  consumedWater(distance, ccalibrationvalue, root);
+
+  int waterlevelat=0;
+  if(distance > 0) {
+    waterlevelat = tankheight - distance + ccalibrationvalue;
+    Serial.println(ccalibrationvalue);
+    Serial.println("calibration value printed above");
+  }
+  Serial.println("Waterlevelat");
+  Serial.println(waterlevelat);
+  tanklevelpercentage = waterlevelat / tankheight * 100;
+  if(tanklevelpercentage > 100)  {
+    tanklevelpercentage = 100;
+  }
+  if(tanklevelpercentage < 0)  {
+    tanklevelpercentage = 0;
+  }
+  
+  //Blynk.virtualWrite(V0, tanklevelpercentage);
+  root["TankLevelPercentage"] = tanklevelpercentage;
+
+  //Blynk.virtualWrite(V5, uptimesec);
+}
+
+void measureWater(int distance, long calibrationvalue, JsonObject& root) {
   float availablelitres = 0;
 
   int waterlevelat=0;
@@ -112,7 +177,7 @@ void measureWater(int distance, JsonObject& root) {
   root["AvailableLitres"] = availablelitres;
 }
 
-void consumedWater(int distance, JsonObject& root) {
+void consumedWater(int distance, long calibrationvalue, JsonObject& root) {
   float consumedlitres = 0;
   float consumedvolume = (distance - calibrationvalue) * tanklength * tankwidth;
   consumedlitres = consumedvolume / 1000;
