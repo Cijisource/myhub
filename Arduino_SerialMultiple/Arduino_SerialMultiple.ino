@@ -10,7 +10,7 @@ SoftwareSerial serialPort(9,10); //Rx and Tx
 float tankheight = 121; //4 feet
 long scalibrationvalue = 21;
 long ssensorrestorecalibration;
-long ccalibrationvalue = 21;
+long ccalibrationvalue = 5;
 long csensorrestorecalibration;
 
 float tankwidth = 152; //5 feet
@@ -80,8 +80,14 @@ void checkWaterLevelInCompressorTank(JsonObject& root) {
     distance = tankheight;
     scalibrationvalue = 0;
   } 
-  measureWater(distance, scalibrationvalue, root);
-  consumedWater(distance, scalibrationvalue, root);
+  float availablelitres = measureWater(distance, scalibrationvalue);
+  float consumedlitres = consumedWater(distance, scalibrationvalue);
+
+  //Blynk.virtualWrite(V3, availablelitres);
+  root["AvailableLitres"] = availablelitres;
+
+  //Blynk.virtualWrite(V2, consumedlitres);
+  root["ConsumedLitres"] = consumedlitres;
 
   int waterlevelat=0;
   if(distance > 0) {
@@ -126,7 +132,7 @@ void checkWaterLevelInCementTank(JsonObject& root) {
   Serial.println(distance);
   
   //Blynk.virtualWrite(V1, distance);
-  root["SensorDistance"] = distance;
+  root["CSensorDistance"] = distance;
   
   ccalibrationvalue = csensorrestorecalibration;
   if(distance > (tankheight + ccalibrationvalue)) {
@@ -134,8 +140,14 @@ void checkWaterLevelInCementTank(JsonObject& root) {
     distance = tankheight;
     ccalibrationvalue = 0;
   } 
-  measureWater(distance, ccalibrationvalue, root);
-  consumedWater(distance, ccalibrationvalue, root);
+  float availablelitres = measureWater(distance, ccalibrationvalue);
+  float consumedlitres = consumedWater(distance, ccalibrationvalue);
+
+  //Blynk.virtualWrite(V13, availablelitres);
+  root["CAvailableLitres"] = availablelitres;
+
+  //Blynk.virtualWrite(V12, consumedlitres);
+  root["CConsumedLitres"] = consumedlitres;
 
   int waterlevelat=0;
   if(distance > 0) {
@@ -143,7 +155,7 @@ void checkWaterLevelInCementTank(JsonObject& root) {
     Serial.println(ccalibrationvalue);
     Serial.println("calibration value printed above");
   }
-  Serial.println("Waterlevelat");
+  Serial.println("CWaterlevelat");
   Serial.println(waterlevelat);
   tanklevelpercentage = waterlevelat / tankheight * 100;
   if(tanklevelpercentage > 100)  {
@@ -154,12 +166,12 @@ void checkWaterLevelInCementTank(JsonObject& root) {
   }
   
   //Blynk.virtualWrite(V0, tanklevelpercentage);
-  root["TankLevelPercentage"] = tanklevelpercentage;
+  root["CTankLevelPercentage"] = tanklevelpercentage;
 
   //Blynk.virtualWrite(V5, uptimesec);
 }
 
-void measureWater(int distance, long calibrationvalue, JsonObject& root) {
+float measureWater(int distance, long calibrationvalue) {
   float availablelitres = 0;
 
   int waterlevelat=0;
@@ -173,11 +185,10 @@ void measureWater(int distance, long calibrationvalue, JsonObject& root) {
   if(availablelitres < 0){
     availablelitres = 0;
   }
-  //Blynk.virtualWrite(V3, availablelitres);
-  root["AvailableLitres"] = availablelitres;
+  return availablelitres;
 }
 
-void consumedWater(int distance, long calibrationvalue, JsonObject& root) {
+float consumedWater(int distance, long calibrationvalue) {
   float consumedlitres = 0;
   float consumedvolume = (distance - calibrationvalue) * tanklength * tankwidth;
   consumedlitres = consumedvolume / 1000;
@@ -185,6 +196,5 @@ void consumedWater(int distance, long calibrationvalue, JsonObject& root) {
   if(consumedlitres < 0){
     consumedlitres = 0;
   }
-  //Blynk.virtualWrite(V2, consumedlitres);
-  root["ConsumedLitres"] = consumedlitres;
+  return consumedlitres;
 }
