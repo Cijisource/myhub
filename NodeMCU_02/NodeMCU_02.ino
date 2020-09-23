@@ -51,7 +51,7 @@ BLYNK_WRITE(V0) {
     isSTankFullEmailSent = false;
   }
    
-  if (compressorTankPercentage < 40) {
+  if (compressorTankPercentage < 40 && compressorTankPercentage > 0) {
     if (!isSTankLowEmailSent) {
       Blynk.email("Compressor Tank", "Quarter Level reached. Please Refill.");
       Serial.println(isSTankLowEmailSent);
@@ -79,7 +79,7 @@ BLYNK_WRITE(V10) {
     isCTankFullEmailSent = false;
   }
   
-  if(cementTankPercentage < 40) {
+  if(cementTankPercentage < 40 && cementTankPercentage > 0) {
     if (!isCTankLowEmailSent) {
         Blynk.email("Cement Tank", "Quarter Level reached. Please Refill.");
         Serial.println(isCTankLowEmailSent );
@@ -118,7 +118,7 @@ void uploadtoBlynk(){
     led2.on();
     led3.off();
   }
-  if(compressorTankPercentage > 75 && compressorTankPercentage < 100) {
+  if(compressorTankPercentage > 75 && compressorTankPercentage <= 100) {
     led0.on();
     led1.on();
     led2.on();
