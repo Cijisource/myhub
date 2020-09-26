@@ -13,7 +13,7 @@ long ssensorrestorecalibration;
 float stankwidth = 152; //5 feet
 float stanklength = 137; //4.5 feet
 
-float ctankheight = 74; //4 feet
+float ctankheight = 62; //4 feet
 long ccalibrationvalue = 5;
 long csensorrestorecalibration;
 float ctankwidth = 132.08; //5 feet
