@@ -7,14 +7,17 @@
 #include <ArduinoJson.h>
 SoftwareSerial serialPort(9,10); //Rx and Tx
 
-float tankheight = 121; //4 feet
+float stankheight = 121; //4 feet
 long scalibrationvalue = 21;
 long ssensorrestorecalibration;
+float stankwidth = 152; //5 feet
+float stanklength = 137; //4.5 feet
+
+float ctankheight = 74; //4 feet
 long ccalibrationvalue = 5;
 long csensorrestorecalibration;
-
-float tankwidth = 152; //5 feet
-float tanklength = 137; //4.5 feet
+float ctankwidth = 132.08; //5 feet
+float ctanklength = 304.8; //4.5 feet
 
 void setup() {
   // put your setup code here, to run once:
@@ -75,13 +78,13 @@ void checkWaterLevelInCompressorTank(JsonObject& root) {
   root["SensorDistance"] = distance;
   
   scalibrationvalue = ssensorrestorecalibration;
-  if(distance > (tankheight + scalibrationvalue)) {
+  if(distance > (stankheight + scalibrationvalue)) {
     Serial.println(distance);
-    distance = tankheight;
+    distance = stankheight;
     scalibrationvalue = 0;
   } 
-  float availablelitres = measureWater(distance, scalibrationvalue);
-  float consumedlitres = consumedWater(distance, scalibrationvalue);
+  float availablelitres = measureWater(distance, scalibrationvalue, stankheight, stankwidth, stanklength);
+  float consumedlitres = consumedWater(distance, scalibrationvalue, stankheight, stankwidth, stanklength);
 
   //Blynk.virtualWrite(V3, availablelitres);
   root["AvailableLitres"] = availablelitres;
@@ -91,13 +94,13 @@ void checkWaterLevelInCompressorTank(JsonObject& root) {
 
   int waterlevelat=0;
   if(distance > 0) {
-    waterlevelat = tankheight - distance + scalibrationvalue;
+    waterlevelat = stankheight - distance + scalibrationvalue;
     Serial.println(scalibrationvalue);
     Serial.println("calibration value printed above");
   }
   Serial.println("Waterlevelat");
   Serial.println(waterlevelat);
-  tanklevelpercentage = waterlevelat / tankheight * 100;
+  tanklevelpercentage = waterlevelat / stankheight * 100;
   if(tanklevelpercentage > 100)  {
     tanklevelpercentage = 100;
   }
@@ -135,13 +138,13 @@ void checkWaterLevelInCementTank(JsonObject& root) {
   root["CSensorDistance"] = distance;
   
   ccalibrationvalue = csensorrestorecalibration;
-  if(distance > (tankheight + ccalibrationvalue)) {
+  if(distance > (ctankheight + ccalibrationvalue)) {
     Serial.println(distance);
-    distance = tankheight;
+    distance = ctankheight;
     ccalibrationvalue = 0;
   } 
-  float availablelitres = measureWater(distance, ccalibrationvalue);
-  float consumedlitres = consumedWater(distance, ccalibrationvalue);
+  float availablelitres = measureWater(distance, ccalibrationvalue, ctankheight, ctankwidth, ctanklength);
+  float consumedlitres = consumedWater(distance, ccalibrationvalue, ctankheight, ctankwidth, ctanklength);
 
   //Blynk.virtualWrite(V13, availablelitres);
   root["CAvailableLitres"] = availablelitres;
@@ -151,13 +154,13 @@ void checkWaterLevelInCementTank(JsonObject& root) {
 
   int waterlevelat=0;
   if(distance > 0) {
-    waterlevelat = tankheight - distance + ccalibrationvalue;
+    waterlevelat = ctankheight - distance + ccalibrationvalue;
     Serial.println(ccalibrationvalue);
     Serial.println("calibration value printed above");
   }
   Serial.println("CWaterlevelat");
   Serial.println(waterlevelat);
-  tanklevelpercentage = waterlevelat / tankheight * 100;
+  tanklevelpercentage = waterlevelat / ctankheight * 100;
   if(tanklevelpercentage > 100)  {
     tanklevelpercentage = 100;
   }
@@ -171,7 +174,7 @@ void checkWaterLevelInCementTank(JsonObject& root) {
   //Blynk.virtualWrite(V5, uptimesec);
 }
 
-float measureWater(int distance, long calibrationvalue) {
+float measureWater(int distance, long calibrationvalue, float tankheight, float tankwidth, float tanklength) {
   float availablelitres = 0;
 
   int waterlevelat=0;
@@ -188,7 +191,7 @@ float measureWater(int distance, long calibrationvalue) {
   return availablelitres;
 }
 
-float consumedWater(int distance, long calibrationvalue) {
+float consumedWater(int distance, long calibrationvalue, float tankheight, float tankwidth, float tanklength) {
   float consumedlitres = 0;
   float consumedvolume = (distance - calibrationvalue) * tanklength * tankwidth;
   consumedlitres = consumedvolume / 1000;
