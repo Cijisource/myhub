@@ -4,7 +4,7 @@
 #include <SoftwareSerial.h>
 #include <ArduinoJson.h>
 
-float stankheight = 121; //4 feet
+float stankheight = 180; //4 feet
 long scalibrationvalue = 21;
 long ssensorrestorecalibration;
 float stankwidth = 152; //5 feet
