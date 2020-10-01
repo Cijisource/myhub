@@ -8,7 +8,7 @@
 SoftwareSerial serialPort(9,10); //Rx and Tx
 
 float stankheight = 121; //4 feet
-long scalibrationvalue = 21;
+long scalibrationvalue = 14;
 long ssensorrestorecalibration;
 float stankwidth = 152; //5 feet
 float stanklength = 137; //4.5 feet
@@ -68,18 +68,18 @@ void checkWaterLevelInCompressorTank(JsonObject& root) {
   duration = pulseIn(secho, HIGH);
   distance = (duration/2) / 29.1;
   
-  Serial.println("Compressor duration");
-  Serial.println(duration);
+  //Serial.println("Compressor duration");
+  //Serial.println(duration);
 
-  Serial.println("Compressor distance");
-  Serial.println(distance);
+//  Serial.println("Compressor distance");
+//  Serial.println(distance);
   
   //Blynk.virtualWrite(V1, distance);
   root["SensorDistance"] = distance;
   
   scalibrationvalue = ssensorrestorecalibration;
   if(distance > (stankheight + scalibrationvalue)) {
-    Serial.println(distance);
+    //Serial.println(distance);
     distance = stankheight;
     scalibrationvalue = 0;
   } 
@@ -95,11 +95,11 @@ void checkWaterLevelInCompressorTank(JsonObject& root) {
   int waterlevelat=0;
   if(distance > 0) {
     waterlevelat = stankheight - distance + scalibrationvalue;
-    Serial.println(scalibrationvalue);
-    Serial.println("calibration value printed above");
+//    Serial.println(scalibrationvalue);
+//    Serial.println("calibration value printed above");
   }
-  Serial.println("Waterlevelat");
-  Serial.println(waterlevelat);
+//  Serial.println("Waterlevelat");
+//  Serial.println(waterlevelat);
   tanklevelpercentage = waterlevelat / stankheight * 100;
   if(tanklevelpercentage > 100)  {
     tanklevelpercentage = 100;
@@ -139,7 +139,7 @@ void checkWaterLevelInCementTank(JsonObject& root) {
   
   ccalibrationvalue = csensorrestorecalibration;
   if(distance > (ctankheight + ccalibrationvalue)) {
-    Serial.println(distance);
+//    Serial.println(distance);
     distance = ctankheight;
     ccalibrationvalue = 0;
   } 
@@ -155,11 +155,11 @@ void checkWaterLevelInCementTank(JsonObject& root) {
   int waterlevelat=0;
   if(distance > 0) {
     waterlevelat = ctankheight - distance + ccalibrationvalue;
-    Serial.println(ccalibrationvalue);
-    Serial.println("calibration value printed above");
+//    Serial.println(ccalibrationvalue);
+//    Serial.println("calibration value printed above");
   }
-  Serial.println("CWaterlevelat");
-  Serial.println(waterlevelat);
+//  Serial.println("CWaterlevelat");
+//  Serial.println(waterlevelat);
   tanklevelpercentage = waterlevelat / ctankheight * 100;
   if(tanklevelpercentage > 100)  {
     tanklevelpercentage = 100;
