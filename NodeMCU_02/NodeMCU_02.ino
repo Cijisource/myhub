@@ -5,17 +5,17 @@ char auth[] = "ODbXgkyA-fZohqppkwa0qm8QusGnDXCa";
 
 // Your WiFi credentials.
 // Set password to "" for open networks.
- char ssid[] = "Cijaiz_Home";
- char pass[] = "M00n5050";
+// char ssid[] = "Cijaiz_Home";
+// char pass[] = "M00n5050";
 //char ssid[] = "Galaxy A719DBD";
 //char pass[] = "mygalaxya71";
-//char ssid[] = "Cijaiz complex";
-//char pass[] = "9000150001";
+char ssid[] = "Cijaiz complex";
+char pass[] = "9000150001";
 
-bool isSTankLowEmailSent = false;
-bool isSTankFullEmailSent = false;
-bool isCTankLowEmailSent = false;
-bool isCTankFullEmailSent = false;
+bool isSTankLowEmailSent = true;
+bool isSTankFullEmailSent = true;
+bool isCTankLowEmailSent = true;
+bool isCTankFullEmailSent = true;
 
 float compressorTankPercentage = 0;
 float cementTankPercentage = 0;
@@ -28,6 +28,11 @@ BlynkTimer timer;
 
 void setup() {
   Blynk.begin(auth, ssid, pass);
+ 
+  isSTankLowEmailSent = false;
+  isSTankFullEmailSent = false;
+  isCTankLowEmailSent = false;
+  isCTankFullEmailSent = false;
   
   Serial.begin(115200);
   // Setup a function to be called every second
@@ -47,11 +52,11 @@ BLYNK_WRITE(V0) {
       isSTankFullEmailSent = true;
     }
   }
-  else {
+  else if(compressorTankPercentage > 20) {
     isSTankFullEmailSent = false;
   }
    
-  if (compressorTankPercentage < 40 && compressorTankPercentage > 0) {
+  if (compressorTankPercentage < 40 && compressorTankPercentage > 10) {
     if (!isSTankLowEmailSent) {
       Blynk.email("Compressor Tank", "Quarter Level reached. Please Refill.");
       Serial.println(isSTankLowEmailSent);
@@ -59,7 +64,7 @@ BLYNK_WRITE(V0) {
       isSTankLowEmailSent = true; 
     }
   }
-  else {
+  else if(compressorTankPercentage > 20) {
     isSTankLowEmailSent = false; 
   }
 }
@@ -75,7 +80,7 @@ BLYNK_WRITE(V10) {
       isCTankFullEmailSent = true;  
     }
   }
-  else {
+  else if(cementTankPercentage > 20){
     isCTankFullEmailSent = false;
   }
   
@@ -88,7 +93,7 @@ BLYNK_WRITE(V10) {
         isCTankLowEmailSent = true;  
     }
   }
-  else {
+  else if(cementTankPercentage > 10) {
     isCTankLowEmailSent = false;
   }
 }
