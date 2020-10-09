@@ -5,11 +5,11 @@
 #include <ArduinoJson.h>
 SoftwareSerial serialPort(11,10); //Rx and Tx
 
-float stankheight = 60; //4 feet
-long scalibrationvalue = 0;
-long ssensorrestorecalibration;
-float stankwidth = 99; //5 feet
-float stanklength = 198; //4.5 feet
+int stankheight = 45; //4 feet
+int scalibrationvalue = 1;
+int ssensorrestorecalibration;
+int stankwidth = 111; //5 feet
+int stanklength = 200; //4.5 feet
 
 void setup() {
   // put your setup code here, to run once:
@@ -17,9 +17,11 @@ void setup() {
   serialPort.begin(115200);
   Serial.begin(115200);
   Serial.println("----------------SETUP INITIATED--------------------------");
+  
   pinMode(strigger, OUTPUT);
   pinMode(secho, INPUT);
-  ssensorrestorecalibration = scalibrationvalue;  
+  ssensorrestorecalibration = scalibrationvalue; 
+   
   Serial.println("----------------SETUP COMPLETED--------------------------");
 }
   
@@ -38,10 +40,9 @@ void loop() {
   delay(1000);
 }
 
-
 void checkWaterLevelInSintexTank(JsonObject& root) {
-  long duration, distance;
-  float tanklevelpercentage = 0;
+  long duration;
+  int distance,tanklevelpercentage = 0;
 
   digitalWrite(strigger, LOW);  
   delayMicroseconds(2); 
@@ -53,40 +54,42 @@ void checkWaterLevelInSintexTank(JsonObject& root) {
   duration = pulseIn(secho, HIGH);
   distance = (duration/2) / 29.1;
   
-  Serial.println("Sintex duration");
-  Serial.println(duration);
+//  Serial.println("Sintex duration");
+//  Serial.println(duration);
 
-  Serial.println("Sintex distance");
-  Serial.println(distance);
+//  Serial.println("Sintex distance");
+//  Serial.println(distance);
   
   //Blynk.virtualWrite(V1, distance);
   root["SSensorDistance"] = distance;
   
   scalibrationvalue = ssensorrestorecalibration;
   if(distance > (stankheight + scalibrationvalue)) {
-    Serial.println(distance);
+    //Serial.println(distance);
     distance = stankheight;
     scalibrationvalue = 0;
   } 
   float availablelitres = measureWater(distance, scalibrationvalue, stankheight, stankwidth, stanklength);
   float consumedlitres = consumedWater(distance, scalibrationvalue, stankheight, stankwidth, stanklength);
-  Serial.println(availablelitres);
-  Serial.println(consumedlitres);
 
+//  Serial.println(availablelitres);
+//  Serial.println(consumedlitres);
+  
   //Blynk.virtualWrite(V13, availablelitres);
   root["SAvailableLitres"] = availablelitres;
   
   //Blynk.virtualWrite(V12, consumedlitres);
   root["SConsumedLitres"] = consumedlitres;
 
-  float waterlevelat=0.0;
+  int waterlevelat = 0;
+
   if(distance > 0) {
     waterlevelat = stankheight - distance + scalibrationvalue;
-    Serial.println(scalibrationvalue);
-    Serial.println("calibration value printed above");
+//    Serial.println(scalibrationvalue);
+//    Serial.println("calibration value printed above");
   }
-  Serial.println("SWaterlevel");
-  Serial.println(waterlevelat);
+//  Serial.println("SWaterlevel");
+//  Serial.println(waterlevelat);
   
   tanklevelpercentage = waterlevelat / stankheight * 100;
   if(tanklevelpercentage > 100)  {
@@ -95,11 +98,11 @@ void checkWaterLevelInSintexTank(JsonObject& root) {
   if(tanklevelpercentage < 0)  {
     tanklevelpercentage = 0;
   }
-  
-  //Blynk.virtualWrite(V0, tanklevelpercentage);
+
   root["STankLevelPercentage"] = tanklevelpercentage;
   root["SWaterLevelAt"] = waterlevelat;
   root["SWaterLevel"] = waterlevelat/30.48;
+
   //Blynk.virtualWrite(V5, uptimesec);
 }
 

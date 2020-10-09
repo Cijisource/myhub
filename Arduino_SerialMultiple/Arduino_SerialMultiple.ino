@@ -7,13 +7,13 @@
 #include <ArduinoJson.h>
 SoftwareSerial serialPort(9,10); //Rx and Tx
 
-float stankheight = 121; //4 feet
+int stankheight = 121; //4 feet
 long scalibrationvalue = 14;
 long ssensorrestorecalibration;
 float stankwidth = 152; //5 feet
 float stanklength = 137; //4.5 feet
 
-float ctankheight = 62; //4 feet
+int ctankheight = 62; //4 feet
 long ccalibrationvalue = 5;
 long csensorrestorecalibration;
 float ctankwidth = 132.08; //5 feet
@@ -56,7 +56,7 @@ void loop() {
 
 void checkWaterLevelInCompressorTank(JsonObject& root) {
   long duration, distance;
-  float tanklevelpercentage = 0;
+  int tanklevelpercentage = 0;
 
   digitalWrite(strigger, LOW);  
   delayMicroseconds(2); 
@@ -92,7 +92,7 @@ void checkWaterLevelInCompressorTank(JsonObject& root) {
   //Blynk.virtualWrite(V2, consumedlitres);
   root["ConsumedLitres"] = consumedlitres;
 
-  int waterlevelat=0;
+  float waterlevelat=0.0;
   if(distance > 0) {
     waterlevelat = stankheight - distance + scalibrationvalue;
 //    Serial.println(scalibrationvalue);
@@ -110,13 +110,13 @@ void checkWaterLevelInCompressorTank(JsonObject& root) {
   
   //Blynk.virtualWrite(V0, tanklevelpercentage);
   root["TankLevelPercentage"] = tanklevelpercentage;
-
+  root["SWaterlevelat"] = waterlevelat/30.48;
   //Blynk.virtualWrite(V5, uptimesec);
 }
 
 void checkWaterLevelInCementTank(JsonObject& root) {
   long duration, distance;
-  float tanklevelpercentage = 0;
+  int tanklevelpercentage = 0;
 
   digitalWrite(ctrigger, LOW);  
   delayMicroseconds(2); 
@@ -152,7 +152,7 @@ void checkWaterLevelInCementTank(JsonObject& root) {
   //Blynk.virtualWrite(V12, consumedlitres);
   root["CConsumedLitres"] = consumedlitres;
 
-  int waterlevelat=0;
+  float waterlevelat=0.0;
   if(distance > 0) {
     waterlevelat = ctankheight - distance + ccalibrationvalue;
 //    Serial.println(ccalibrationvalue);
@@ -170,7 +170,7 @@ void checkWaterLevelInCementTank(JsonObject& root) {
   
   //Blynk.virtualWrite(V0, tanklevelpercentage);
   root["CTankLevelPercentage"] = tanklevelpercentage;
-
+  root["CWaterlevelat"] = waterlevelat/30.48;
   //Blynk.virtualWrite(V5, uptimesec);
 }
 

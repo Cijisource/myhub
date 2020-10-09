@@ -22,8 +22,8 @@ char pass[] = "9000150001";
 BlynkTimer timer;
 long systemUptime, uptimesec;
 long distance, cdistance;
-float tankPercentage, ctankPercentage;
-float availableLitres, cavailableLitres; 
+int tankPercentage, ctankPercentage;
+float availableLitres, cavailableLitres, waterlevelAt, cwaterlevelAt; 
 float consumedLitres, cconsumedLitres;
 
 void setup() {
@@ -68,11 +68,13 @@ void ExtractSensorData() {
   tankPercentage=root["TankLevelPercentage"];
   availableLitres = root["AvailableLitres"];
   consumedLitres = root["ConsumedLitres"];
+  waterlevelAt = root["SWaterlevelat"];
 
   cdistance=root["CSensorDistance"];
   ctankPercentage=root["CTankLevelPercentage"];
   cavailableLitres = root["CAvailableLitres"];
   cconsumedLitres = root["CConsumedLitres"];
+  cwaterlevelAt = root["CWaterlevelat"];
         
   //Serial.println("ArduinoUptime ");
   //Serial.print(systemUptime);
@@ -101,7 +103,9 @@ void uploadtoBlynk(){
   Blynk.virtualWrite(V0, tankPercentage);
   Blynk.virtualWrite(V1, distance);
   Blynk.virtualWrite(V2, consumedLitres);
+  
   Blynk.virtualWrite(V3, availableLitres);
+  Blynk.virtualWrite(V4, swaterlevelAt);
   
   Blynk.virtualWrite(V5, systemUptime);  
   Blynk.virtualWrite(V6, uptimesec);
@@ -109,7 +113,9 @@ void uploadtoBlynk(){
   Blynk.virtualWrite(V10, ctankPercentage);
   Blynk.virtualWrite(V11, cdistance);
   Blynk.virtualWrite(V12, cconsumedLitres);
+  
   Blynk.virtualWrite(V13, cavailableLitres);
+  Blynk.virtualWrite(V14, cwaterlevelAt);
 
   //Bridge Transmit
   bridge.virtualWrite(V0, tankPercentage);
