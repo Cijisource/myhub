@@ -20,7 +20,7 @@ char pass[] = "9000150001";
 BlynkTimer timer;
 long systemUptime, uptimesec;
 long distance, cdistance;
-float tankPercentage, ctankPercentage, compressorTankPercentage, cementTankPercentage;
+int tankPercentage, ctankPercentage, compressorTankPercentage, cementTankPercentage;
 float availableLitres, cavailableLitres; 
 float consumedLitres, cconsumedLitres, waterlevelat;
 
@@ -75,7 +75,7 @@ void ExtractSensorData() {
   
   availableLitres = root["SAvailableLitres"];
   consumedLitres = root["SConsumedLitres"];
-  waterlevelat = root["SWaterlevel"];
+  waterlevelat = root["SWaterLevel"];
         
   //Serial.println("ArduinoUptime ");
   //Serial.print(systemUptime);
@@ -147,7 +147,7 @@ BLYNK_WRITE(V0) {
 }
 
 BLYNK_WRITE(V10) {
-  cementTankPercentage = param.asFloat();
+  cementTankPercentage = param.asInt();
   
   if(cementTankPercentage == 100) {
     if (!isCTankFullEmailSent) {
