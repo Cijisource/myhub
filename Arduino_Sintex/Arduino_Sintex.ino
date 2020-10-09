@@ -5,11 +5,11 @@
 #include <ArduinoJson.h>
 SoftwareSerial serialPort(11,10); //Rx and Tx
 
-int stankheight = 45; //4 feet
+int stankheight = 54; //4 feet
 int scalibrationvalue = 18;
 int ssensorrestorecalibration;
-int stankwidth = 111; //5 feet
-int stanklength = 200; //4.5 feet
+int stankwidth = 112; //5 feet
+int stanklength = 166; //4.5 feet
 
 void setup() {
   // put your setup code here, to run once:
