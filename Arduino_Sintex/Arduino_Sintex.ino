@@ -95,10 +95,9 @@ void checkWaterLevelInSintexTank(JsonObject& root) {
   if(tanklevelpercentage < 0)  {
     tanklevelpercentage = 0;
   }
-  
-  //Blynk.virtualWrite(V0, tanklevelpercentage);
-  //root["STankLevelPercentage"] = tanklevelpercentage;
-  root["STankLevelPercentage"] = distance;
+
+  root["STankLevelPercentage"] = tanklevelpercentage;
+  //root["STankLevelPercentage"] = distance;
   root["SWaterLevelAt"] = waterlevelat;
   root["SWaterLevel"] = waterlevelat/30.48;
   //Blynk.virtualWrite(V5, uptimesec);
