@@ -71,9 +71,10 @@ void checkWaterLevelInSintexTank(JsonObject& root) {
   } 
   float availablelitres = measureWater(distance, scalibrationvalue, stankheight, stankwidth, stanklength);
   float consumedlitres = consumedWater(distance, scalibrationvalue, stankheight, stankwidth, stanklength);
+
 //  Serial.println(availablelitres);
 //  Serial.println(consumedlitres);
-
+  
   //Blynk.virtualWrite(V13, availablelitres);
   root["SAvailableLitres"] = availablelitres;
   
@@ -81,6 +82,7 @@ void checkWaterLevelInSintexTank(JsonObject& root) {
   root["SConsumedLitres"] = consumedlitres;
 
   int waterlevelat = 0;
+
   if(distance > 0) {
     waterlevelat = stankheight - distance + scalibrationvalue;
 //    Serial.println(scalibrationvalue);
@@ -100,7 +102,7 @@ void checkWaterLevelInSintexTank(JsonObject& root) {
   root["STankLevelPercentage"] = tanklevelpercentage;
   root["SWaterLevelAt"] = waterlevelat;
   root["SWaterLevel"] = waterlevelat/30.48;
-  
+
   //Blynk.virtualWrite(V5, uptimesec);
 }
 

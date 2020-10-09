@@ -14,12 +14,14 @@ char auth[] = "ODbXgkyA-fZohqppkwa0qm8QusGnDXCa";
 // char pass[] = "M00n5050";
 //char ssid[] = "Galaxy A719DBD";
 //char pass[] = "mygalaxya71";
+
 char ssid[] = "Cijaiz complex";
 char pass[] = "9000150001";
 
 BlynkTimer timer;
 long systemUptime, uptimesec;
 long distance, cdistance;
+
 int tankPercentage, ctankPercentage, compressorTankPercentage, cementTankPercentage;
 float availableLitres, cavailableLitres; 
 float consumedLitres, cconsumedLitres, waterlevelat;
@@ -76,7 +78,7 @@ void ExtractSensorData() {
   availableLitres = root["SAvailableLitres"];
   consumedLitres = root["SConsumedLitres"];
   waterlevelat = root["SWaterLevel"];
-        
+  
   //Serial.println("ArduinoUptime ");
   //Serial.print(systemUptime);
   //Serial.println("");
