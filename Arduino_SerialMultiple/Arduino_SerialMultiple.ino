@@ -92,7 +92,7 @@ void checkWaterLevelInCompressorTank(JsonObject& root) {
   //Blynk.virtualWrite(V2, consumedlitres);
   root["ConsumedLitres"] = consumedlitres;
 
-  float waterlevelat=0.0;
+  int waterlevelat = 0;
   if(distance > 0) {
     waterlevelat = stankheight - distance + scalibrationvalue;
 //    Serial.println(scalibrationvalue);
@@ -152,7 +152,7 @@ void checkWaterLevelInCementTank(JsonObject& root) {
   //Blynk.virtualWrite(V12, consumedlitres);
   root["CConsumedLitres"] = consumedlitres;
 
-  float waterlevelat=0.0;
+  int waterlevelat = 0;
   if(distance > 0) {
     waterlevelat = ctankheight - distance + ccalibrationvalue;
 //    Serial.println(ccalibrationvalue);
