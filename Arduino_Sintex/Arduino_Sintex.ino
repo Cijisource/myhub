@@ -1,18 +1,20 @@
-#define strigger 7
-#define secho 6
+#define strigger 8
+#define secho 9
 
 #include <SoftwareSerial.h>
 #include <ArduinoJson.h>
+SoftwareSerial serialPort(11,10); //Rx and Tx
 
-float stankheight = 180; //4 feet
-long scalibrationvalue = 21;
+float stankheight = 45; //4 feet
+long scalibrationvalue = 1;
 long ssensorrestorecalibration;
-float stankwidth = 152; //5 feet
-float stanklength = 137; //4.5 feet
+float stankwidth = 111; //5 feet
+float stanklength = 200; //4.5 feet
 
 void setup() {
   // put your setup code here, to run once:
-  
+
+  serialPort.begin(115200);
   Serial.begin(115200);
   Serial.println("----------------SETUP INITIATED--------------------------");
   pinMode(strigger, OUTPUT);
@@ -31,6 +33,7 @@ void loop() {
   root["ArduinoUptime"] = uptimesec;
   
   checkWaterLevelInSintexTank(root);
+  root.printTo(serialPort);
   
   delay(1000);
 }
@@ -67,21 +70,24 @@ void checkWaterLevelInSintexTank(JsonObject& root) {
   } 
   float availablelitres = measureWater(distance, scalibrationvalue, stankheight, stankwidth, stanklength);
   float consumedlitres = consumedWater(distance, scalibrationvalue, stankheight, stankwidth, stanklength);
+  Serial.println(availablelitres);
+  Serial.println(consumedlitres);
 
   //Blynk.virtualWrite(V13, availablelitres);
   root["SAvailableLitres"] = availablelitres;
-
+  
   //Blynk.virtualWrite(V12, consumedlitres);
   root["SConsumedLitres"] = consumedlitres;
 
-  int waterlevelat=0;
+  float waterlevelat=0.0;
   if(distance > 0) {
     waterlevelat = stankheight - distance + scalibrationvalue;
     Serial.println(scalibrationvalue);
     Serial.println("calibration value printed above");
   }
-  Serial.println("SWaterlevelat");
+  Serial.println("SWaterlevel");
   Serial.println(waterlevelat);
+  
   tanklevelpercentage = waterlevelat / stankheight * 100;
   if(tanklevelpercentage > 100)  {
     tanklevelpercentage = 100;
@@ -91,8 +97,10 @@ void checkWaterLevelInSintexTank(JsonObject& root) {
   }
   
   //Blynk.virtualWrite(V0, tanklevelpercentage);
-  root["STankLevelPercentage"] = tanklevelpercentage;
-
+  //root["STankLevelPercentage"] = tanklevelpercentage;
+  root["STankLevelPercentage"] = distance;
+  root["SWaterLevelAt"] = waterlevelat;
+  root["SWaterLevel"] = waterlevelat/30.48;
   //Blynk.virtualWrite(V5, uptimesec);
 }
 
