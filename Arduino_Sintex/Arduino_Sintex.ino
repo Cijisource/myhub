@@ -5,11 +5,11 @@
 #include <ArduinoJson.h>
 SoftwareSerial serialPort(11,10); //Rx and Tx
 
-int stankheight = 45; //4 feet
-int scalibrationvalue = 1;
-int ssensorrestorecalibration;
-int stankwidth = 111; //5 feet
-int stanklength = 200; //4.5 feet
+float stankheight = 111; //4 feet
+float scalibrationvalue = 18;
+float ssensorrestorecalibration;
+float stankwidth = 95; //5 feet
+float stanklength = 95; //4.5 feet
 
 void setup() {
   // put your setup code here, to run once:
@@ -42,7 +42,8 @@ void loop() {
 
 void checkWaterLevelInSintexTank(JsonObject& root) {
   long duration;
-  int distance,tanklevelpercentage = 0;
+  int distance = 0;
+  float tanklevelpercentage = 0;
 
   digitalWrite(strigger, LOW);  
   delayMicroseconds(2); 
@@ -63,10 +64,10 @@ void checkWaterLevelInSintexTank(JsonObject& root) {
   //Blynk.virtualWrite(V1, distance);
   root["SSensorDistance"] = distance;
   
+//  Serial.println(distance);
   scalibrationvalue = ssensorrestorecalibration;
   if(distance > (stankheight + scalibrationvalue)) {
-    //Serial.println(distance);
-    distance = stankheight;
+      distance = stankheight;
     scalibrationvalue = 0;
   } 
   float availablelitres = measureWater(distance, scalibrationvalue, stankheight, stankwidth, stanklength);
@@ -81,7 +82,7 @@ void checkWaterLevelInSintexTank(JsonObject& root) {
   //Blynk.virtualWrite(V12, consumedlitres);
   root["SConsumedLitres"] = consumedlitres;
 
-  int waterlevelat = 0;
+  float waterlevelat = 0;
 
   if(distance > 0) {
     waterlevelat = stankheight - distance + scalibrationvalue;
@@ -90,16 +91,22 @@ void checkWaterLevelInSintexTank(JsonObject& root) {
   }
 //  Serial.println("SWaterlevel");
 //  Serial.println(waterlevelat);
-  
+//  Serial.println("tankheight");
+//  Serial.println(stankheight);
+//  waterlevelat = 44;
+//  stankheight = 44;
   tanklevelpercentage = waterlevelat / stankheight * 100;
+//  Serial.println("percents");
+//  Serial.println(tanklevelpercentage);
+  
   if(tanklevelpercentage > 100)  {
     tanklevelpercentage = 100;
   }
   if(tanklevelpercentage < 0)  {
     tanklevelpercentage = 0;
   }
-
-  root["STankLevelPercentage"] = tanklevelpercentage;
+  
+  root["STankLevelPercentage"] = (int)tanklevelpercentage;
   root["SWaterLevelAt"] = waterlevelat;
   root["SWaterLevel"] = waterlevelat/30.48;
 
