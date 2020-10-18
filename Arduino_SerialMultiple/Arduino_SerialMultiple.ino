@@ -8,7 +8,7 @@
 SoftwareSerial serialPort(9,10); //Rx and Tx
 
 int stankheight = 121; //4 feet
-long scalibrationvalue = 14;
+long scalibrationvalue = 18;
 long ssensorrestorecalibration;
 float stankwidth = 152; //5 feet
 float stanklength = 137; //4.5 feet
