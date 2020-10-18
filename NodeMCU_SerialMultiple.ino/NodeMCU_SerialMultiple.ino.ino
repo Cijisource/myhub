@@ -5,6 +5,11 @@ SoftwareSerial serialPort(D1,D0);
 #define BLYNK_PRINT Serial  
 #include <ESP8266WiFi.h>
 #include <BlynkSimpleEsp8266.h>
+#include <BlynkSimpleEsp8266.h>
+#include "ThingSpeak.h"
+
+unsigned long myChannelNumber = 1184761;
+const char * myWriteAPIKey = "Z85MB42QWY3T4VGG";
 
 WidgetBridge bridge(V0);
 
@@ -19,6 +24,8 @@ char auth[] = "DYLNiU66yHBL8I09OrJ0g5X4r_AbS66J";
 char ssid[] = "Cijaiz complex";
 char pass[] = "9000150001";
 
+WiFiClient client;
+
 BlynkTimer timer;
 long systemUptime, uptimesec;
 long distance, cdistance;
@@ -28,8 +35,10 @@ float consumedLitres, cconsumedLitres;
 
 void setup() {
   Blynk.begin(auth, ssid, pass);
+  ThingSpeak.begin(client);
   // Setup a function to be called every second
   timer.setInterval(1000L, uploadtoBlynk);
+  uploadTimer.setInterval(600000L, uploadToThingSpeak);
   
   Serial.begin(115200);
   serialPort.begin(115200);
@@ -122,8 +131,49 @@ void uploadtoBlynk(){
   bridge.virtualWrite(V10, ctankPercentage);
 }
 
+void uploadToThingSpeak()
+{
+  //Upload to Thinkspeak
+  int httpCode = ThingSpeak.writeField(myChannelNumber, 1, 50, myWriteAPIKey);
+  if (httpCode == 200) {
+    Serial.println("Channel write successful.");
+  }
+  else {
+    Serial.println("Problem writing to channel. HTTP error code " + String(httpCode));
+  }
+  httpCode = ThingSpeak.writeField(myChannelNumber, 2, 25, myWriteAPIKey);
+  if (httpCode == 200) {
+    Serial.println("Channel write successful.");
+  }
+  else {
+    Serial.println("Problem writing to channel. HTTP error code " + String(httpCode));
+  }
+  httpCode = ThingSpeak.writeField(myChannelNumber, 4, 500, myWriteAPIKey);
+  if (httpCode == 200) {
+    Serial.println("Channel write successful.");
+  }
+  else {
+    Serial.println("Problem writing to channel. HTTP error code " + String(httpCode));
+  }
+  httpCode = ThingSpeak.writeField(myChannelNumber, 5, 1500, myWriteAPIKey);
+  if (httpCode == 200) {
+    Serial.println("Channel write successful.");
+  }
+  else {
+    Serial.println("Problem writing to channel. HTTP error code " + String(httpCode));
+  }
+  httpCode = ThingSpeak.writeField(myChannelNumber, 6, 2000, myWriteAPIKey);
+  if (httpCode == 200) {
+    Serial.println("Channel write successful.");
+  }
+  else {
+    Serial.println("Problem writing to channel. HTTP error code " + String(httpCode));
+  }
+}
+
 void loop() {
   ExtractSensorData();
   Blynk.run();
   timer.run(); // Initiates SimpleTimer
+  uploadTimer.run();
 }
