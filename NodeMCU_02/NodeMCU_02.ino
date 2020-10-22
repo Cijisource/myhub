@@ -189,35 +189,21 @@ BLYNK_WRITE(V10) {
 void uploadToThingSpeak()
 {
   //Upload to Thinkspeak
-  int httpCode = ThingSpeak.writeField(myChannelNumber, 1, tankPercentage, myWriteAPIKey);
+  int httpCode = ThingSpeak.writeField(myChannelNumber, 7, tankPercentage, myWriteAPIKey);
   if (httpCode == 200) {
     Serial.println("Channel write successful.");
   }
   else {
     Serial.println("Problem writing to channel. HTTP error code " + String(httpCode));
   }
-  httpCode = ThingSpeak.writeField(myChannelNumber, 2, 25, myWriteAPIKey);
+  httpCode = ThingSpeak.writeField(myChannelNumber, 8, consumedLitres, myWriteAPIKey);
   if (httpCode == 200) {
     Serial.println("Channel write successful.");
   }
   else {
     Serial.println("Problem writing to channel. HTTP error code " + String(httpCode));
   }
-  httpCode = ThingSpeak.writeField(myChannelNumber, 4, 500, myWriteAPIKey);
-  if (httpCode == 200) {
-    Serial.println("Channel write successful.");
-  }
-  else {
-    Serial.println("Problem writing to channel. HTTP error code " + String(httpCode));
-  }
-  httpCode = ThingSpeak.writeField(myChannelNumber, 5, 1500, myWriteAPIKey);
-  if (httpCode == 200) {
-    Serial.println("Channel write successful.");
-  }
-  else {
-    Serial.println("Problem writing to channel. HTTP error code " + String(httpCode));
-  }
-  httpCode = ThingSpeak.writeField(myChannelNumber, 6, 2000, myWriteAPIKey);
+  httpCode = ThingSpeak.writeField(myChannelNumber, 9, availableLitres, myWriteAPIKey);
   if (httpCode == 200) {
     Serial.println("Channel write successful.");
   }
