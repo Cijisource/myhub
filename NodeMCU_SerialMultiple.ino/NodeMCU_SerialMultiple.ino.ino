@@ -76,7 +76,7 @@ void ExtractSensorData() {
   tankPercentage=root["TankLevelPercentage"];
   availableLitres = root["AvailableLitres"];
   consumedLitres = root["ConsumedLitres"];
-  waterlevelAt = root["SWaterlevelat"];
+  swaterlevelAt = root["SWaterlevelat"];
 
   cdistance=root["CSensorDistance"];
   ctankPercentage=root["CTankLevelPercentage"];
@@ -133,35 +133,42 @@ void uploadtoBlynk(){
 void uploadToThingSpeak()
 {
   //Upload to Thinkspeak
-  int httpCode = ThingSpeak.writeField(myChannelNumber, 1, 50, myWriteAPIKey);
+  int httpCode = ThingSpeak.writeField(myChannelNumber, 1, tankPercentage, myWriteAPIKey);
   if (httpCode == 200) {
     Serial.println("Channel write successful.");
   }
   else {
     Serial.println("Problem writing to channel. HTTP error code " + String(httpCode));
   }
-  httpCode = ThingSpeak.writeField(myChannelNumber, 2, 25, myWriteAPIKey);
+  httpCode = ThingSpeak.writeField(myChannelNumber, 2, consumedLitres, myWriteAPIKey);
   if (httpCode == 200) {
     Serial.println("Channel write successful.");
   }
   else {
     Serial.println("Problem writing to channel. HTTP error code " + String(httpCode));
   }
-  httpCode = ThingSpeak.writeField(myChannelNumber, 4, 500, myWriteAPIKey);
+  httpCode = ThingSpeak.writeField(myChannelNumber, 3, availableLitres, myWriteAPIKey);
   if (httpCode == 200) {
     Serial.println("Channel write successful.");
   }
   else {
     Serial.println("Problem writing to channel. HTTP error code " + String(httpCode));
   }
-  httpCode = ThingSpeak.writeField(myChannelNumber, 5, 1500, myWriteAPIKey);
+  httpCode = ThingSpeak.writeField(myChannelNumber, 4, ctankPercentage, myWriteAPIKey);
   if (httpCode == 200) {
     Serial.println("Channel write successful.");
   }
   else {
     Serial.println("Problem writing to channel. HTTP error code " + String(httpCode));
   }
-  httpCode = ThingSpeak.writeField(myChannelNumber, 6, 2000, myWriteAPIKey);
+  httpCode = ThingSpeak.writeField(myChannelNumber, 5, cconsumedLitres, myWriteAPIKey);
+  if (httpCode == 200) {
+    Serial.println("Channel write successful.");
+  }
+  else {
+    Serial.println("Problem writing to channel. HTTP error code " + String(httpCode));
+  }
+  httpCode = ThingSpeak.writeField(myChannelNumber, 6, cavailableLitres, myWriteAPIKey);
   if (httpCode == 200) {
     Serial.println("Channel write successful.");
   }
