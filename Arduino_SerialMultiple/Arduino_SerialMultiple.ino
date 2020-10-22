@@ -94,7 +94,7 @@ void checkWaterLevelInCompressorTank(JsonObject& root) {
 
   int waterlevelat = 0;
   if(distance > 0) {
-    waterlevelat = stankheight - distance + scalibrationvalue;
+    waterlevelat = (stankheight - distance) + scalibrationvalue;
 //    Serial.println(scalibrationvalue);
 //    Serial.println("calibration value printed above");
   }
@@ -114,7 +114,7 @@ void checkWaterLevelInCompressorTank(JsonObject& root) {
   //Blynk.virtualWrite(V5, uptimesec);
 }
 
-void checkWaterLevelInCementTank(JsonObject& root) {
+  void checkWaterLevelInCementTank(JsonObject& root) {
   long duration, distance;
   int tanklevelpercentage = 0;
 
