@@ -7,13 +7,13 @@
 #include <ArduinoJson.h>
 SoftwareSerial serialPort(9,10); //Rx and Tx
 
-int stankheight = 121; //4 feet
-long scalibrationvalue = 14;
+float stankheight = 110.0; //4 feet
+long scalibrationvalue = 34;
 long ssensorrestorecalibration;
-float stankwidth = 152; //5 feet
-float stanklength = 137; //4.5 feet
+float stankwidth = 151.0; //5 feet
+float stanklength = 151.0; //4.5 feet
 
-int ctankheight = 62; //4 feet
+float ctankheight = 62.0; //4 feet
 long ccalibrationvalue = 5;
 long csensorrestorecalibration;
 float ctankwidth = 132.08; //5 feet
@@ -100,7 +100,9 @@ void checkWaterLevelInCompressorTank(JsonObject& root) {
   }
 //  Serial.println("Waterlevelat");
 //  Serial.println(waterlevelat);
+  
   tanklevelpercentage = waterlevelat / stankheight * 100;
+
   if(tanklevelpercentage > 100)  {
     tanklevelpercentage = 100;
   }
@@ -110,11 +112,12 @@ void checkWaterLevelInCompressorTank(JsonObject& root) {
   
   //Blynk.virtualWrite(V0, tanklevelpercentage);
   root["TankLevelPercentage"] = tanklevelpercentage;
+  
   root["SWaterlevelat"] = waterlevelat/30.48;
   //Blynk.virtualWrite(V5, uptimesec);
 }
 
-void checkWaterLevelInCementTank(JsonObject& root) {
+  void checkWaterLevelInCementTank(JsonObject& root) {
   long duration, distance;
   int tanklevelpercentage = 0;
 
@@ -161,6 +164,10 @@ void checkWaterLevelInCementTank(JsonObject& root) {
 //  Serial.println("CWaterlevelat");
 //  Serial.println(waterlevelat);
   tanklevelpercentage = waterlevelat / ctankheight * 100;
+  Serial.println("cement");
+  Serial.println(ctankheight);
+  Serial.println(waterlevelat);
+  Serial.println(tanklevelpercentage);
   if(tanklevelpercentage > 100)  {
     tanklevelpercentage = 100;
   }
