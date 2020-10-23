@@ -26,6 +26,8 @@ char pass[] = "9000150001";
 WiFiClient client;
 
 BlynkTimer timer;
+BlynkTimer uploadTimer;
+
 long systemUptime, uptimesec;
 long distance, cdistance;
 int tankPercentage, ctankPercentage;
@@ -37,7 +39,7 @@ void setup() {
   ThingSpeak.begin(client);
   // Setup a function to be called every second
   timer.setInterval(1000L, uploadtoBlynk);
-  uploadTimer.setInterval(600000L, uploadToThingSpeak);
+  uploadTimer.setInterval(60000L, uploadToThingSpeak);
   
   Serial.begin(115200);
   serialPort.begin(115200);
@@ -76,7 +78,7 @@ void ExtractSensorData() {
   tankPercentage=root["TankLevelPercentage"];
   availableLitres = root["AvailableLitres"];
   consumedLitres = root["ConsumedLitres"];
-  swaterlevelAt = root["SWaterlevelat"];
+  waterlevelAt = root["SWaterlevelat"];
 
   cdistance=root["CSensorDistance"];
   ctankPercentage=root["CTankLevelPercentage"];
@@ -113,7 +115,7 @@ void uploadtoBlynk(){
   Blynk.virtualWrite(V2, consumedLitres);
   
   Blynk.virtualWrite(V3, availableLitres);
-  Blynk.virtualWrite(V4, swaterlevelAt);
+  Blynk.virtualWrite(V4, waterlevelAt);
   
   Blynk.virtualWrite(V5, systemUptime);  
   Blynk.virtualWrite(V6, uptimesec);
@@ -134,47 +136,47 @@ void uploadToThingSpeak()
 {
   //Upload to Thinkspeak
   int httpCode = ThingSpeak.writeField(myChannelNumber, 1, tankPercentage, myWriteAPIKey);
-  if (httpCode == 200) {
-    Serial.println("Channel write successful.");
-  }
-  else {
-    Serial.println("Problem writing to channel. HTTP error code " + String(httpCode));
-  }
+//  if (httpCode == 200) {
+//    Serial.println("Channel write successful.");
+//  }
+//  else {
+//    Serial.println("Problem writing to channel. HTTP error code " + String(httpCode));
+//  }
   httpCode = ThingSpeak.writeField(myChannelNumber, 2, consumedLitres, myWriteAPIKey);
-  if (httpCode == 200) {
-    Serial.println("Channel write successful.");
-  }
-  else {
-    Serial.println("Problem writing to channel. HTTP error code " + String(httpCode));
-  }
+//  if (httpCode == 200) {
+//    Serial.println("Channel write successful.");
+//  }
+//  else {
+//    Serial.println("Problem writing to channel. HTTP error code " + String(httpCode));
+//  }
   httpCode = ThingSpeak.writeField(myChannelNumber, 3, availableLitres, myWriteAPIKey);
-  if (httpCode == 200) {
-    Serial.println("Channel write successful.");
-  }
-  else {
-    Serial.println("Problem writing to channel. HTTP error code " + String(httpCode));
-  }
+//  if (httpCode == 200) {
+//    Serial.println("Channel write successful.");
+//  }
+//  else {
+//    Serial.println("Problem writing to channel. HTTP error code " + String(httpCode));
+//  }
   httpCode = ThingSpeak.writeField(myChannelNumber, 4, ctankPercentage, myWriteAPIKey);
-  if (httpCode == 200) {
-    Serial.println("Channel write successful.");
-  }
-  else {
-    Serial.println("Problem writing to channel. HTTP error code " + String(httpCode));
-  }
+//  if (httpCode == 200) {
+//    Serial.println("Channel write successful.");
+//  }
+//  else {
+//    Serial.println("Problem writing to channel. HTTP error code " + String(httpCode));
+//  }
   httpCode = ThingSpeak.writeField(myChannelNumber, 5, cconsumedLitres, myWriteAPIKey);
-  if (httpCode == 200) {
-    Serial.println("Channel write successful.");
-  }
-  else {
-    Serial.println("Problem writing to channel. HTTP error code " + String(httpCode));
-  }
+//  if (httpCode == 200) {
+//    Serial.println("Channel write successful.");
+//  }
+//  else {
+//    Serial.println("Problem writing to channel. HTTP error code " + String(httpCode));
+//  }
   httpCode = ThingSpeak.writeField(myChannelNumber, 6, cavailableLitres, myWriteAPIKey);
-  if (httpCode == 200) {
-    Serial.println("Channel write successful.");
-  }
-  else {
-    Serial.println("Problem writing to channel. HTTP error code " + String(httpCode));
-  }
+//  if (httpCode == 200) {
+//    Serial.println("Channel write successful.");
+//  }
+//  else {
+//    Serial.println("Problem writing to channel. HTTP error code " + String(httpCode));
+//  }
 }
 
 void loop() {
