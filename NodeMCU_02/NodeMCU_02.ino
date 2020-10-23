@@ -5,6 +5,10 @@ SoftwareSerial serialPort(D1,D0);
 #define BLYNK_PRINT Serial  
 #include <ESP8266WiFi.h>
 #include <BlynkSimpleEsp8266.h>
+#include "ThingSpeak.h"
+
+unsigned long myChannelNumber = 1184761;
+const char * myWriteAPIKey = "Z85MB42QWY3T4VGG";
 
 char auth[] = "ODbXgkyA-fZohqppkwa0qm8QusGnDXCa";
 
@@ -18,7 +22,10 @@ char auth[] = "ODbXgkyA-fZohqppkwa0qm8QusGnDXCa";
 char ssid[] = "Cijaiz complex";
 char pass[] = "9000150001";
 
+WiFiClient client;
+
 BlynkTimer timer;
+BlynkTimer uploadTimer;
 long systemUptime, uptimesec;
 long distance, cdistance;
 
@@ -34,8 +41,10 @@ bool isCTankFullEmailSent = true;
 void setup() {
   Serial.println("----------------SETUP INITIATED--------------------------");
   Blynk.begin(auth, ssid, pass);
+  ThingSpeak.begin(client);
   // Setup a function to be called every second
   timer.setInterval(1000L, uploadtoBlynk);
+  uploadTimer.setInterval(600000L, uploadToThingSpeak);
 
   isSTankLowEmailSent = false;
   isSTankFullEmailSent = false;
@@ -177,8 +186,35 @@ BLYNK_WRITE(V10) {
   }
 }
 
+void uploadToThingSpeak()
+{
+  //Upload to Thinkspeak
+  int httpCode = ThingSpeak.writeField(myChannelNumber, 7, tankPercentage, myWriteAPIKey);
+  if (httpCode == 200) {
+    Serial.println("Channel write successful.");
+  }
+  else {
+    Serial.println("Problem writing to channel. HTTP error code " + String(httpCode));
+  }
+  httpCode = ThingSpeak.writeField(myChannelNumber, 8, consumedLitres, myWriteAPIKey);
+  if (httpCode == 200) {
+    Serial.println("Channel write successful.");
+  }
+  else {
+    Serial.println("Problem writing to channel. HTTP error code " + String(httpCode));
+  }
+  httpCode = ThingSpeak.writeField(myChannelNumber, 9, availableLitres, myWriteAPIKey);
+  if (httpCode == 200) {
+    Serial.println("Channel write successful.");
+  }
+  else {
+    Serial.println("Problem writing to channel. HTTP error code " + String(httpCode));
+  }
+}
+
 void loop() {
   ExtractSensorData();
   Blynk.run();
   timer.run(); // Initiates SimpleTimer
+  uploadTimer.run();
 }
