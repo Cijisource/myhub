@@ -7,11 +7,11 @@
 #include <ArduinoJson.h>
 SoftwareSerial serialPort(9,10); //Rx and Tx
 
-float stankheight = 103.0; //4 feet
+float stankheight = 107.0; //cms
 long scalibrationvalue = 34;
 long ssensorrestorecalibration;
-float stankwidth = 151.0; //5 feet
-float stanklength = 151.0; //4.5 feet
+float stankwidth = 153.0; //5 feet
+float stanklength = 153.0; //4.5 feet
 
 float ctankheight = 62.0; //4 feet
 long ccalibrationvalue = 5;
@@ -161,13 +161,13 @@ void checkWaterLevelInCompressorTank(JsonObject& root) {
 //  Serial.println("CWaterlevelat");
 //  Serial.println(waterlevelat);
   tanklevelpercentage = waterlevelat / ctankheight * 100;
-  Serial.println("cement");
-  Serial.println(ctankheight);
-  Serial.println(waterlevelat);
-  Serial.println(tanklevelpercentage);
-  if(tanklevelpercentage > 100)  {
-    tanklevelpercentage = 100;
-  }
+//  Serial.println("cement");
+//  Serial.println(ctankheight);
+//  Serial.println(waterlevelat);
+//  Serial.println(tanklevelpercentage);
+//  if(tanklevelpercentage > 100)  {
+//    tanklevelpercentage = 100;
+//  }
   if(tanklevelpercentage < 0)  {
     tanklevelpercentage = 0;
   }
@@ -183,7 +183,7 @@ float measureWater(int distance, long calibrationvalue, float tankheight, float 
 
   int waterlevelat=0;
   if(distance > 0) {
-    waterlevelat = (tankheight - distance) + calibrationvalue;
+    waterlevelat = tankheight + calibrationvalue - distance;
   }
   
   float availablevolume = waterlevelat * tanklength * tankwidth;
