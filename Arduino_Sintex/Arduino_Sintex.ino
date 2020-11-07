@@ -5,7 +5,7 @@
 #include <ArduinoJson.h>
 SoftwareSerial serialPort(11,10); //Rx and Tx
 
-float stankheight = 80; cms
+float stankheight = 111; //4 feet
 float scalibrationvalue = 22;
 float ssensorrestorecalibration;
 float stankwidth = 95; //5 feet
@@ -57,10 +57,10 @@ void checkWaterLevelInSintexTank(JsonObject& root) {
   
 //  Serial.println("Sintex duration");
 //  Serial.println(duration);
-
+//
 //  Serial.println("Sintex distance");
 //  Serial.println(distance);
-  
+//  
   //Blynk.virtualWrite(V1, distance);
   root["SSensorDistance"] = distance;
   
@@ -118,7 +118,7 @@ float measureWater(int distance, long calibrationvalue, float tankheight, float 
 
   int waterlevelat=0;
   if(distance > 0) {
-    waterlevelat = tankheight + calibrationvalue - distance:
+    waterlevelat = (tankheight - distance) + calibrationvalue;
   }
   
   float availablevolume = waterlevelat * tanklength * tankwidth;
