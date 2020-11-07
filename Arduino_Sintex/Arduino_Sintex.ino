@@ -5,7 +5,7 @@
 #include <ArduinoJson.h>
 SoftwareSerial serialPort(11,10); //Rx and Tx
 
-float stankheight = 111; //4 feet
+float stankheight = 80; cms
 float scalibrationvalue = 22;
 float ssensorrestorecalibration;
 float stankwidth = 95; //5 feet
@@ -118,7 +118,7 @@ float measureWater(int distance, long calibrationvalue, float tankheight, float 
 
   int waterlevelat=0;
   if(distance > 0) {
-    waterlevelat = (tankheight - distance) + calibrationvalue;
+    waterlevelat = tankheight + calibrationvalue - distance:
   }
   
   float availablevolume = waterlevelat * tanklength * tankwidth;
