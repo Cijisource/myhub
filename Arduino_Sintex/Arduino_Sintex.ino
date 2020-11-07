@@ -85,7 +85,7 @@ void checkWaterLevelInSintexTank(JsonObject& root) {
   float waterlevelat = 0;
 
   if(distance > 0) {
-    waterlevelat = stankheight - distance + scalibrationvalue;
+    waterlevelat = stankheight + scalibrationvalue - distance;
 //    Serial.println(scalibrationvalue);
 //    Serial.println("calibration value printed above");
   }
