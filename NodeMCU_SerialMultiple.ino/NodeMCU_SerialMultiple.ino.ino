@@ -20,10 +20,13 @@ char auth[] = "DYLNiU66yHBL8I09OrJ0g5X4r_AbS66J";
 // char pass[] = "M00n5050";
 //char ssid[] = "Galaxy A719DBD";
 //char pass[] = "mygalaxya71";
-char ssid[] = "Cijaiz complex";
-char pass[] = "9000150001";
+//char ssid[] = "Cijaiz complex";
+//char pass[] = "9000150001";
+char ssid[] = "Cijai_ComplexClone";
+char pass[] = "9000150002";
 
-WiFiClient client;
+
+//WiFiClient client;
 
 BlynkTimer timer;
 BlynkTimer uploadTimer;
@@ -36,10 +39,10 @@ float consumedLitres, cconsumedLitres;
 
 void setup() {
   Blynk.begin(auth, ssid, pass);
-  ThingSpeak.begin(client);
+  //ThingSpeak.begin(client);
   // Setup a function to be called every second
   timer.setInterval(1000L, uploadtoBlynk);
-  uploadTimer.setInterval(60000L, uploadToThingSpeak);
+  //uploadTimer.setInterval(10000L, uploadToThingSpeak);
   
   Serial.begin(115200);
   serialPort.begin(115200);
@@ -136,12 +139,12 @@ void uploadToThingSpeak()
 {
   //Upload to Thinkspeak
   int httpCode = ThingSpeak.writeField(myChannelNumber, 1, tankPercentage, myWriteAPIKey);
-//  if (httpCode == 200) {
-//    Serial.println("Channel write successful.");
-//  }
-//  else {
-//    Serial.println("Problem writing to channel. HTTP error code " + String(httpCode));
-//  }
+  if (httpCode == 200) {
+    Serial.println("Channel write successful.");
+  }
+  else {
+    Serial.println("Problem writing to channel. HTTP error code " + String(httpCode));
+  }
   httpCode = ThingSpeak.writeField(myChannelNumber, 2, consumedLitres, myWriteAPIKey);
 //  if (httpCode == 200) {
 //    Serial.println("Channel write successful.");
@@ -183,5 +186,5 @@ void loop() {
   ExtractSensorData();
   Blynk.run();
   timer.run(); // Initiates SimpleTimer
-  uploadTimer.run();
+  //uploadTimer.run();
 }
