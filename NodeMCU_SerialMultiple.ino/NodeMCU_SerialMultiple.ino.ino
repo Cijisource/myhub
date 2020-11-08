@@ -9,6 +9,8 @@ SoftwareSerial serialPort(D1,D0);
 
 unsigned long myChannelNumber = 1184761;
 const char * myWriteAPIKey = "Z85MB42QWY3T4VGG";
+bool isNotify = false;
+bool isLowNotify = false;
 
 WidgetBridge bridge(V0);
 
@@ -43,6 +45,9 @@ void setup() {
   // Setup a function to be called every second
   timer.setInterval(1000L, uploadtoBlynk);
   uploadTimer.setInterval(60000L, uploadToThingSpeak);
+
+  isNotify = false;
+  isLowNotify = false;
   
   Serial.begin(115200);
   serialPort.begin(115200);
@@ -110,6 +115,31 @@ void ExtractSensorData() {
   //Serial.println("");
   
   //Serial.println("----------------------");
+  if(tankPercentage < 20)
+  {
+    if(isLowNotify == false)
+    {
+      Blynk.notify("Compressor Tank is Empty!! Please switch Off");
+      isLowNotify = true;
+    }
+  }
+  else
+  { 
+    isLowNotify = false;
+  }
+  
+  if(tankPercentage > 95)
+  {
+    if(isNotify == false)
+    {
+      Blynk.notify("Compressor Tank is Full!! Please switch Off");
+      isNotify = true;
+    }
+  }
+  else
+  { 
+    isNotify = false;
+  }
 }
 
 void uploadtoBlynk(){
