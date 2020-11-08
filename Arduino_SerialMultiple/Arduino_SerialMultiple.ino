@@ -13,7 +13,7 @@ long ssensorrestorecalibration;
 float stankwidth = 153.0; //5 feet
 float stanklength = 153.0; //4.5 feet
 
-float ctankheight = 62.0; //4 feet
+float ctankheight = 80.0; //4 feet
 long ccalibrationvalue = 5;
 long csensorrestorecalibration;
 float ctankwidth = 132.08; //5 feet
@@ -154,7 +154,7 @@ void checkWaterLevelInCompressorTank(JsonObject& root) {
 
   int waterlevelat = 0;
   if(distance > 0) {
-    waterlevelat = ctankheight - distance + ccalibrationvalue;
+    waterlevelat = ctankheight + ccalibrationvalue - distance;
 //    Serial.println(ccalibrationvalue);
 //    Serial.println("calibration value printed above");
   }
