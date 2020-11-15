@@ -119,6 +119,7 @@ void uploadtoBlynk(){
   
   Blynk.virtualWrite(V5, systemUptime);  
   Blynk.virtualWrite(V6, uptimesec);
+  Blynk.virtualWrite(V9, waterlevelat);
 
   Blynk.virtualWrite(V7, compressorTankPercentage);
   Serial.println(compressorTankPercentage);
@@ -172,7 +173,7 @@ BLYNK_WRITE(V10) {
     isCTankFullEmailSent = false;
   }
   
-  if(cementTankPercentage < 40 && cementTankPercentage > 0) {
+  if(cementTankPercentage < 40 && cementTankPercentage > 10) {
     if (!isCTankLowEmailSent) {
         Blynk.email("Cement Tank", "Quarter Level reached. Please Refill.");
         Serial.println(isCTankLowEmailSent );
