@@ -18,9 +18,17 @@ long ccalibrationvalue = 5;
 long csensorrestorecalibration;
 float ctankwidth = 132.08; //5 feet
 float ctanklength = 304.8; //4.5 feet
+bool isSlow;
+bool isShigh;
+bool isClow;
+bool isChigh;
 
 void setup() {
   // put your setup code here, to run once:
+  isSlow = false;
+  isShigh = false;
+  isClow = false;
+  isChigh = false;
   
   serialPort.begin(115200);
   Serial.begin(115200);
@@ -107,6 +115,23 @@ void checkWaterLevelInCompressorTank(JsonObject& root) {
     tanklevelpercentage = 0;
   }
   
+  if(tanklevelpercentage < 20 && tanklevelpercentage > 10) {
+    isSlow = true;
+  }
+  else {
+    isSlow = false;
+  }
+  
+  if(tanklevelpercentage > 95) {
+    isShigh = true;
+  }
+  else {
+    isShigh = false;
+  }
+  
+  root["isSlow"] = isSlow;
+  root["isShigh"] = isShigh;
+  
   //Blynk.virtualWrite(V0, tanklevelpercentage);
   root["TankLevelPercentage"] = tanklevelpercentage;
   
@@ -171,8 +196,25 @@ void checkWaterLevelInCompressorTank(JsonObject& root) {
   if(tanklevelpercentage < 0)  {
     tanklevelpercentage = 0;
   }
+    
+  if(tanklevelpercentage < 20 && tanklevelpercentage > 10) {
+    isClow = true;
+  }
+  else {
+    isClow = false;
+  }
+  
+  if(tanklevelpercentage > 95) {
+    isChigh = true;
+  }
+  else {
+    isChigh = false;
+  }
   
   //Blynk.virtualWrite(V0, tanklevelpercentage);
+  root["isClow"] = isClow;
+  root["isChigh"] = isChigh;
+    
   root["CTankLevelPercentage"] = tanklevelpercentage;
   root["CWaterlevelat"] = waterlevelat/30.48;
   //Blynk.virtualWrite(V5, uptimesec);
