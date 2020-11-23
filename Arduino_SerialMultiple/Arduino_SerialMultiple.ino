@@ -197,17 +197,17 @@ void checkWaterLevelInCompressorTank(JsonObject& root) {
     tanklevelpercentage = 0;
   }
     
-  if(tanklevelpercentage < 20 && tanklevelpercentage > 10) {
+  if(tanklevelpercentage < 30 && tanklevelpercentage > 10) {
     isClow = 1;
   }
-  else {
+  else if(tanklevelpercentage > 30) {
     isClow = 0;
   }
   
   if(tanklevelpercentage > 95) {
     isChigh = 1;
   }
-  else {
+  else if(tanklevelpercentage < 95) {
     isChigh = 0;
   }
   
