@@ -9,8 +9,6 @@ SoftwareSerial serialPort(D1,D0);
 
 unsigned long myChannelNumber = 1184761;
 const char * myWriteAPIKey = "Z85MB42QWY3T4VGG";
-bool isNotify = false;
-bool isLowNotify = false;
 
 WidgetBridge bridge(V0);
 
@@ -38,6 +36,8 @@ long distance, cdistance;
 int tankPercentage, ctankPercentage;
 float availableLitres, cavailableLitres, waterlevelAt, cwaterlevelAt; 
 float consumedLitres, cconsumedLitres;
+bool isSlow, isShigh, isClow, isChigh;
+bool isSlowNotify, isShighNotify, isClowNotify, isChighNotify;
 
 void setup() {
   Blynk.begin(auth, ssid, pass);
@@ -45,9 +45,6 @@ void setup() {
   // Setup a function to be called every second
   timer.setInterval(1000L, uploadtoBlynk);
   uploadTimer.setInterval(60000L, uploadToThingSpeak);
-
-  isNotify = false;
-  isLowNotify = false;
   
   Serial.begin(115200);
   serialPort.begin(115200);
@@ -58,7 +55,7 @@ BLYNK_CONNECTED() {
   bridge.setAuthToken("ODbXgkyA-fZohqppkwa0qm8QusGnDXCa");
 }
 
-void ExtractSensorData() {
+void ExtractSensorData() {  
   StaticJsonBuffer<1000> jsonBuffer;
   JsonObject& root = jsonBuffer.parseObject(serialPort);
 
@@ -93,6 +90,11 @@ void ExtractSensorData() {
   cavailableLitres = root["CAvailableLitres"];
   cconsumedLitres = root["CConsumedLitres"];
   cwaterlevelAt = root["CWaterlevelat"];
+  
+  isSlow = root["isSlow"];
+  isShigh = root["isShigh"];
+  isClow = root["isClow"];
+  isChigh = root["isChigh"];
         
   //Serial.println("ArduinoUptime ");
   //Serial.print(systemUptime);
@@ -115,31 +117,6 @@ void ExtractSensorData() {
   //Serial.println("");
   
   //Serial.println("----------------------");
-  if(tankPercentage < 20)
-  {
-    if(isLowNotify == false)
-    {
-      Blynk.notify("Compressor Tank is Empty!! Please switch Off");
-      isLowNotify = true;
-    }
-  }
-  else
-  { 
-    isLowNotify = false;
-  }
-  
-  if(tankPercentage > 95)
-  {
-    if(isNotify == false)
-    {
-      Blynk.notify("Compressor Tank is Full!! Please switch Off");
-      isNotify = true;
-    }
-  }
-  else
-  { 
-    isNotify = false;
-  }
 }
 
 void uploadtoBlynk(){
@@ -159,10 +136,93 @@ void uploadtoBlynk(){
   
   Blynk.virtualWrite(V13, cavailableLitres);
   Blynk.virtualWrite(V14, cwaterlevelAt);
-
+ 
+  //Notificaation Cloud sync...
+  Blynk.virtualWrite(V30, isSlowNotify);
+  Blynk.virtualWrite(V31, isShighNotify);
+  
+  Blynk.virtualWrite(V32, isClowNotify);
+  Blynk.virtualWrite(V33, isChighNotify);
+  
+    //Notifications..
+  Blynk.virtualWrite(V20, isSlow);
+  Blynk.virtualWrite(V21, isShigh);
+  
+  Blynk.virtualWrite(V22, isClow);
+  Blynk.virtualWrite(V23, isChigh);
+  
   //Bridge Transmit
   bridge.virtualWrite(V0, tankPercentage);
   bridge.virtualWrite(V10, ctankPercentage);
+}
+
+//Compressor Low notify Sync.
+BLYNK_WRITE(V30) {
+  isSlowNotify = param.asBool();
+}
+
+//Compressor High notify Sync.
+BLYNK_WRITE(V31) {
+  isShighNotify = param.asBool();
+}
+
+//Cement Low notify Sync.
+BLYNK_WRITE(V32) {
+  isClowNotify = param.asBool();
+}
+
+//Cement high notify Sync.
+BLYNK_WRITE(V33) {
+  isChighNotify = param.asBool();
+}
+
+//Compressor Low
+BLYNK_WRITE(V20) {
+  isSlow = param.asBool();
+  
+  if(isSlowNotify == false && isSlow == true) {
+     Blynk.notify("Compressor Tank is Empty!! Please switch On Motor.");
+    isSlowNotify = true;
+    
+    //Update server.
+    Blynk.virtualWrite(V30, isSlowNotify);
+  }
+  
+  //Compressor High
+BLYNK_WRITE(V21) {
+  isShigh = param.asBool();
+
+  if(isShighNotify == false) {
+     Blynk.notify("Compressor Tank is Full!! Please switch Off Motor.");
+    isShighNotify = true;
+    
+    //Update server.
+    Blynk.virtualWrite(V31, isShighNotify);
+  }
+  
+ //Cement Low
+BLYNK_WRITE(V22) {
+  isClow = param.asBool();
+  
+  if(isClowNotify == false) {
+     Blynk.notify("Cement Tank is Empty!! Please switch On Motor.");
+    isClowNotify = true;
+    
+    //Update server.
+    Blynk.virtualWrite(V32, isClowNotify);
+  }
+ 
+  //Cement High
+BLYNK_WRITE(V23) {
+  isChigh = param.asBool();
+  
+  if(isChighNotify == false) {
+     Blynk.notify("Cement Tank is Full!! Please switch Off Motor.");
+    isChighNotify = true;
+    
+    //Update server.
+    Blynk.virtualWrite(V33, isChighNotify);
+  }
 }
 
 void uploadToThingSpeak()
