@@ -36,8 +36,8 @@ long distance, cdistance;
 int tankPercentage, ctankPercentage;
 float availableLitres, cavailableLitres, waterlevelAt, cwaterlevelAt; 
 float consumedLitres, cconsumedLitres;
-bool isSlow, isShigh, isClow, isChigh;
-bool isSlowNotify, isShighNotify, isClowNotify, isChighNotify;
+int isSlow, isShigh, isClow, isChigh;
+int isSlowNotify, isShighNotify, isClowNotify, isChighNotify;
 
 void setup() {
   Blynk.begin(auth, ssid, pass);
@@ -158,34 +158,34 @@ void uploadtoBlynk(){
 
 //Compressor Low notify Sync.
 BLYNK_WRITE(V30) {
-  isSlowNotify = param.asBool();
+  isSlowNotify = param.asInt();
 }
 
 //Compressor High notify Sync.
 BLYNK_WRITE(V31) {
-  isShighNotify = param.asBool();
+  isShighNotify = param.asInt();
 }
 
 //Cement Low notify Sync.
 BLYNK_WRITE(V32) {
-  isClowNotify = param.asBool();
+  isClowNotify = param.asInt();
 }
 
 //Cement high notify Sync.
 BLYNK_WRITE(V33) {
-  isChighNotify = param.asBool();
+  isChighNotify = param.asInt();
 }
 
 //Compressor Low
 BLYNK_WRITE(V20) {
-  isSlow = param.asBool();
+  isSlow = param.asInt();
 
-  if(isSlowNotify == false && isSlow == true) {
+  if(isSlowNotify == 0 && isSlow == 1) {
      Blynk.notify("Compressor Tank is Empty!! Please switch On Motor.");
-    isSlowNotify = true;
+    isSlowNotify = 1;
   }
-  else if(isSlow == false) {
-    isSlowNotify = false;
+  else if(isSlow == 0) {
+    isSlowNotify = 0;
   }
 
   //Update server.
@@ -194,14 +194,14 @@ BLYNK_WRITE(V20) {
 
   //Compressor High
 BLYNK_WRITE(V21) {
-  isShigh = param.asBool();
+  isShigh = param.asInt();
 
-  if(isShighNotify == false && isShigh == true) {
+  if(isShighNotify == 0 && isShigh == 1) {
      Blynk.notify("Compressor Tank is Full!! Please switch Off Motor.");
-    isShighNotify = true;
+    isShighNotify = 1;
   }
-  else if(isShigh == false) {
-    isShighNotify = false;
+  else if(isShigh == 0) {
+    isShighNotify = 0;
   }
 
  //Update server.
@@ -210,14 +210,14 @@ BLYNK_WRITE(V21) {
 
  //Cement Low
 BLYNK_WRITE(V22) {
-  isClow = param.asBool();
+  isClow = param.asInt();
 
-  if(isClowNotify == false && isClow == true) {
+  if(isClowNotify == 0 && isClow == 1) {
      Blynk.notify("Cement Tank is Empty!! Please switch On Motor.");
-    isClowNotify = true;
+    isClowNotify = 1;
   }
-  else if(isClow == false) {
-    isClowNotify = false;
+  else if(isClow == 0) {
+    isClowNotify = 0;
   }
     //Update server.
     Blynk.virtualWrite(V32, isClowNotify);
@@ -225,14 +225,14 @@ BLYNK_WRITE(V22) {
 
 //Cement High
 BLYNK_WRITE(V23) {
-  isChigh = param.asBool();
+  isChigh = param.asInt();
 
-  if(isChighNotify == false && isChigh == true) {
+  if(isChighNotify == 0 && isChigh == 1) {
      Blynk.notify("Cement Tank is Full!! Please switch Off Motor.");
-    isChighNotify = true;
+    isChighNotify = 1;
   }
-  else if(isChigh == false) {
-    isChighNotify = false;
+  else if(isChigh == 0) {
+    isChighNotify = 0;
   }
     //Update server.
     Blynk.virtualWrite(V33, isChighNotify);
