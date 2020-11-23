@@ -179,50 +179,63 @@ BLYNK_WRITE(V33) {
 //Compressor Low
 BLYNK_WRITE(V20) {
   isSlow = param.asBool();
-  
+
   if(isSlowNotify == false && isSlow == true) {
      Blynk.notify("Compressor Tank is Empty!! Please switch On Motor.");
     isSlowNotify = true;
-    
-    //Update server.
-    Blynk.virtualWrite(V30, isSlowNotify);
   }
-  
+  else if(isSlow == false) {
+    isSlowNotify = false;
+  }
+
+  //Update server.
+  Blynk.virtualWrite(V30, isSlowNotify);  
+}
+
   //Compressor High
 BLYNK_WRITE(V21) {
   isShigh = param.asBool();
 
-  if(isShighNotify == false) {
+  if(isShighNotify == false && isShigh == true) {
      Blynk.notify("Compressor Tank is Full!! Please switch Off Motor.");
     isShighNotify = true;
-    
-    //Update server.
-    Blynk.virtualWrite(V31, isShighNotify);
   }
-  
+  else if(isShigh == false) {
+    isShighNotify = false;
+  }
+
+ //Update server.
+  Blynk.virtualWrite(V31, isShighNotify);
+}
+
  //Cement Low
 BLYNK_WRITE(V22) {
   isClow = param.asBool();
-  
-  if(isClowNotify == false) {
+
+  if(isClowNotify == false && isClow == true) {
      Blynk.notify("Cement Tank is Empty!! Please switch On Motor.");
     isClowNotify = true;
-    
+  }
+  else if(isClow == false) {
+    isClowNotify = false;
+  }
     //Update server.
     Blynk.virtualWrite(V32, isClowNotify);
-  }
- 
-  //Cement High
+}
+
+//Cement High
 BLYNK_WRITE(V23) {
   isChigh = param.asBool();
-  
-  if(isChighNotify == false) {
+
+  if(isChighNotify == false && isChigh == true) {
      Blynk.notify("Cement Tank is Full!! Please switch Off Motor.");
     isChighNotify = true;
-    
+  }
+  else if(isChigh == false) {
+    isChighNotify = false;
+  }
     //Update server.
     Blynk.virtualWrite(V33, isChighNotify);
-  }
 }
 
 void uploadToThingSpeak()
