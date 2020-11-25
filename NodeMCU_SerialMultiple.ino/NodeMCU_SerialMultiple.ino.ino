@@ -29,7 +29,8 @@ char pass[] = "9000150002";
 WiFiClient client;
 
 BlynkTimer timer;
-BlynkTimer uploadTimer;
+//BlynkTimer uploadTimer;
+BlynkTimer notifyTimer;
 
 long systemUptime, uptimesec;
 long distance, cdistance;
@@ -41,13 +42,15 @@ int isSlowNotify, isShighNotify, isClowNotify, isChighNotify;
 
 void setup() {
   Blynk.begin(auth, ssid, pass);
-  ThingSpeak.begin(client);
+  //ThingSpeak.begin(client);
   // Setup a function to be called every second
   timer.setInterval(1000L, uploadtoBlynk);
-  uploadTimer.setInterval(60000L, uploadToThingSpeak);
+  //uploadTimer.setInterval(60000L, uploadToThingSpeak);
+  notifyTimer.setInterval(900000L, notifyToApp);
   
   Serial.begin(115200);
   serialPort.begin(115200);
+  Serial.print("----------- Setup... ----------");
   while (!Serial) continue;
 }
 
@@ -95,7 +98,12 @@ void ExtractSensorData() {
   isShigh = root["isShigh"];
   isClow = root["isClow"];
   isChigh = root["isChigh"];
-        
+
+//  Serial.println(isSlow);
+//  Serial.println(isShigh);
+//  Serial.println(isClow);
+//  Serial.println(isChigh);
+  
   //Serial.println("ArduinoUptime ");
   //Serial.print(systemUptime);
   //Serial.println("");
@@ -138,18 +146,18 @@ void uploadtoBlynk(){
   Blynk.virtualWrite(V14, cwaterlevelAt);
  
   //Notificaation Cloud sync...
-  Blynk.virtualWrite(V30, isSlowNotify);
-  Blynk.virtualWrite(V31, isShighNotify);
-  
-  Blynk.virtualWrite(V32, isClowNotify);
-  Blynk.virtualWrite(V33, isChighNotify);
-  
+//  Blynk.virtualWrite(V30, isSlowNotify);
+//  Blynk.virtualWrite(V31, isShighNotify);
+//  
+//  Blynk.virtualWrite(V32, isClowNotify);
+//  Blynk.virtualWrite(V33, isChighNotify);
+//  
     //Notifications..
-  Blynk.virtualWrite(V20, isSlow);
-  Blynk.virtualWrite(V21, isShigh);
-  
-  Blynk.virtualWrite(V22, isClow);
-  Blynk.virtualWrite(V23, isChigh);
+//  Blynk.virtualWrite(V20, isSlow);
+//  Blynk.virtualWrite(V21, isShigh);
+//  
+//  Blynk.virtualWrite(V22, isClow);
+//  Blynk.virtualWrite(V23, isChigh);
   
   //Bridge Transmit
   bridge.virtualWrite(V0, tankPercentage);
@@ -238,6 +246,41 @@ BLYNK_WRITE(V23) {
     Blynk.virtualWrite(V33, isChighNotify);
 }
 
+void notifyToApp() 
+{
+  if(isSlowNotify == 0 && isSlow == 1) {
+     Blynk.notify("Compressor Tank is Empty!! Please switch On Motor.");
+    isSlowNotify = 1;
+  }
+  else if(isSlow == 0) {
+    isSlowNotify = 0;
+  }
+
+  if(isShighNotify == 0 && isShigh == 1) {
+     Blynk.notify("Compressor Tank is Full!! Please switch Off Motor.");
+    isShighNotify = 1;
+  }
+  else if(isShigh == 0) {
+    isShighNotify = 0;
+  }
+
+  if(isClowNotify == 0 && isClow == 1) {
+     Blynk.notify("Cement Tank is Empty!! Please switch On Motor.");
+    isClowNotify = 1;
+  }
+  else if(isClow == 0) {
+    isClowNotify = 0;
+  }
+
+  if(isChighNotify == 0 && isChigh == 1) {
+     Blynk.notify("Cement Tank is Full!! Please switch Off Motor.");
+    isChighNotify = 1;
+  }
+  else if(isChigh == 0) {
+    isChighNotify = 0;
+  }
+}
+
 void uploadToThingSpeak()
 {
   //Upload to Thinkspeak
@@ -289,5 +332,6 @@ void loop() {
   ExtractSensorData();
   Blynk.run();
   timer.run(); // Initiates SimpleTimer
-  uploadTimer.run();
+  //uploadTimer.run();
+  notifyTimer.run();
 }
