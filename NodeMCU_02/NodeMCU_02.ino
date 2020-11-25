@@ -44,7 +44,7 @@ void setup() {
   ThingSpeak.begin(client);
   // Setup a function to be called every second
   timer.setInterval(1000L, uploadtoBlynk);
-  uploadTimer.setInterval(600000L, uploadToThingSpeak);
+  uploadTimer.setInterval(120000L, uploadToThingSpeak);
 
   isSTankLowEmailSent = false;
   isSTankFullEmailSent = false;
@@ -148,8 +148,8 @@ BLYNK_WRITE(V0) {
   if (compressorTankPercentage < 40 && compressorTankPercentage > 10) {
     if (!isSTankLowEmailSent) {
       Blynk.email("Compressor Tank", "Quarter Level reached. Please Refill.");
-      Serial.println(isSTankLowEmailSent);
-      Serial.println("Compressor mail sent..");
+      //Serial.println(isSTankLowEmailSent);
+      //Serial.println("Compressor mail sent..");
       isSTankLowEmailSent = true; 
     }
   }
@@ -190,21 +190,11 @@ BLYNK_WRITE(V10) {
 void uploadToThingSpeak()
 {
   //Upload to Thinkspeak
-  int httpCode = ThingSpeak.writeField(myChannelNumber, 7, tankPercentage, myWriteAPIKey);
-  if (httpCode == 200) {
-    Serial.println("Channel write successful.");
-  }
-  else {
-    Serial.println("Problem writing to channel. HTTP error code " + String(httpCode));
-  }
-  httpCode = ThingSpeak.writeField(myChannelNumber, 8, consumedLitres, myWriteAPIKey);
-  if (httpCode == 200) {
-    Serial.println("Channel write successful.");
-  }
-  else {
-    Serial.println("Problem writing to channel. HTTP error code " + String(httpCode));
-  }
-  httpCode = ThingSpeak.writeField(myChannelNumber, 9, availableLitres, myWriteAPIKey);
+  ThingSpeak.setField(7, tankPercentage);
+  ThingSpeak.setField(8, consumedLitres);
+  ThingSpeak.setField(9, availableLitres);
+  
+  int httpCode = ThingSpeak.writeFields(myChannelNumber, myWriteAPIKey);
   if (httpCode == 200) {
     Serial.println("Channel write successful.");
   }
@@ -215,6 +205,7 @@ void uploadToThingSpeak()
 
 void loop() {
   ExtractSensorData();
+  
   Blynk.run();
   timer.run(); // Initiates SimpleTimer
   uploadTimer.run();
