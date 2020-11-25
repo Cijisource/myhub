@@ -25,11 +25,10 @@ char auth[] = "DYLNiU66yHBL8I09OrJ0g5X4r_AbS66J";
 char ssid[] = "Cijai_ComplexClone";
 char pass[] = "9000150002";
 
-
 WiFiClient client;
 
 BlynkTimer timer;
-//BlynkTimer uploadTimer;
+BlynkTimer uploadTimer;
 BlynkTimer notifyTimer;
 
 long systemUptime, uptimesec;
@@ -41,16 +40,21 @@ int isSlow, isShigh, isClow, isChigh;
 int isSlowNotify, isShighNotify, isClowNotify, isChighNotify;
 
 void setup() {
-  Blynk.begin(auth, ssid, pass);
-  //ThingSpeak.begin(client);
-  // Setup a function to be called every second
-  timer.setInterval(1000L, uploadtoBlynk);
-  //uploadTimer.setInterval(60000L, uploadToThingSpeak);
-  notifyTimer.setInterval(900000L, notifyToApp);
+  Serial.begin(9600);
+  Serial.print("----------- Setup... ----------");
   
+  Blynk.begin(auth, ssid, pass);
+  ThingSpeak.begin(client);
+  
+  // Setup a function to be called every second
+  timer.setInterval(1000L, uploadtoBlynk); // 1 second
+  uploadTimer.setInterval(20000L, uploadToThingSpeak); // 20 seconds (300000 -- 5 minutes)
+  notifyTimer.setInterval(900000L, notifyToApp); // 15 mins
+
   Serial.begin(115200);
   serialPort.begin(115200);
-  Serial.print("----------- Setup... ----------");
+  Serial.print("----------- END Setup... ----------");
+  
   while (!Serial) continue;
 }
 
@@ -71,7 +75,7 @@ void ExtractSensorData() {
   if (!serialPort.available() > 0) {
     //Serial.println("received Data");
     distance = -100;
-//    Serial.println("Didnt Receive Data");
+    Serial.println("Didnt Receive Data");
   }  
   
   if(root == JsonObject::invalid()) 
@@ -79,7 +83,6 @@ void ExtractSensorData() {
 
 //  Serial.println("JSON Received and Parsed");
 //  root.prettyPrintTo(Serial);
-//  Serial.println("");
 
   systemUptime=root["ArduinoUptime"];
   distance=root["SensorDistance"];
@@ -144,106 +147,10 @@ void uploadtoBlynk(){
   
   Blynk.virtualWrite(V13, cavailableLitres);
   Blynk.virtualWrite(V14, cwaterlevelAt);
- 
-  //Notificaation Cloud sync...
-//  Blynk.virtualWrite(V30, isSlowNotify);
-//  Blynk.virtualWrite(V31, isShighNotify);
-//  
-//  Blynk.virtualWrite(V32, isClowNotify);
-//  Blynk.virtualWrite(V33, isChighNotify);
-//  
-    //Notifications..
-//  Blynk.virtualWrite(V20, isSlow);
-//  Blynk.virtualWrite(V21, isShigh);
-//  
-//  Blynk.virtualWrite(V22, isClow);
-//  Blynk.virtualWrite(V23, isChigh);
-  
+    
   //Bridge Transmit
   bridge.virtualWrite(V0, tankPercentage);
   bridge.virtualWrite(V10, ctankPercentage);
-}
-
-//Compressor Low notify Sync.
-BLYNK_WRITE(V30) {
-  isSlowNotify = param.asInt();
-}
-
-//Compressor High notify Sync.
-BLYNK_WRITE(V31) {
-  isShighNotify = param.asInt();
-}
-
-//Cement Low notify Sync.
-BLYNK_WRITE(V32) {
-  isClowNotify = param.asInt();
-}
-
-//Cement high notify Sync.
-BLYNK_WRITE(V33) {
-  isChighNotify = param.asInt();
-}
-
-//Compressor Low
-BLYNK_WRITE(V20) {
-  isSlow = param.asInt();
-
-  if(isSlowNotify == 0 && isSlow == 1) {
-     Blynk.notify("Compressor Tank is Empty!! Please switch On Motor.");
-    isSlowNotify = 1;
-  }
-  else if(isSlow == 0) {
-    isSlowNotify = 0;
-  }
-
-  //Update server.
-  Blynk.virtualWrite(V30, isSlowNotify);  
-}
-
-  //Compressor High
-BLYNK_WRITE(V21) {
-  isShigh = param.asInt();
-
-  if(isShighNotify == 0 && isShigh == 1) {
-     Blynk.notify("Compressor Tank is Full!! Please switch Off Motor.");
-    isShighNotify = 1;
-  }
-  else if(isShigh == 0) {
-    isShighNotify = 0;
-  }
-
- //Update server.
-  Blynk.virtualWrite(V31, isShighNotify);
-}
-
- //Cement Low
-BLYNK_WRITE(V22) {
-  isClow = param.asInt();
-
-  if(isClowNotify == 0 && isClow == 1) {
-     Blynk.notify("Cement Tank is Empty!! Please switch On Motor.");
-    isClowNotify = 1;
-  }
-  else if(isClow == 0) {
-    isClowNotify = 0;
-  }
-    //Update server.
-    Blynk.virtualWrite(V32, isClowNotify);
-}
-
-//Cement High
-BLYNK_WRITE(V23) {
-  isChigh = param.asInt();
-
-  if(isChighNotify == 0 && isChigh == 1) {
-     Blynk.notify("Cement Tank is Full!! Please switch Off Motor.");
-    isChighNotify = 1;
-  }
-  else if(isChigh == 0) {
-    isChighNotify = 0;
-  }
-    //Update server.
-    Blynk.virtualWrite(V33, isChighNotify);
 }
 
 void notifyToApp() 
@@ -284,54 +191,29 @@ void notifyToApp()
 void uploadToThingSpeak()
 {
   //Upload to Thinkspeak
-  int httpCode = ThingSpeak.writeField(myChannelNumber, 1, tankPercentage, myWriteAPIKey);
-//  if (httpCode == 200) {
-//    Serial.println("Channel write successful.");
-//  }
-//  else {
-//    Serial.println("Problem writing to channel. HTTP error code " + String(httpCode));
-//  }
-  httpCode = ThingSpeak.writeField(myChannelNumber, 2, consumedLitres, myWriteAPIKey);
-//  if (httpCode == 200) {
-//    Serial.println("Channel write successful.");
-//  }
-//  else {
-//    Serial.println("Problem writing to channel. HTTP error code " + String(httpCode));
-//  }
-  httpCode = ThingSpeak.writeField(myChannelNumber, 3, availableLitres, myWriteAPIKey);
-//  if (httpCode == 200) {
-//    Serial.println("Channel write successful.");
-//  }
-//  else {
-//    Serial.println("Problem writing to channel. HTTP error code " + String(httpCode));
-//  }
-  httpCode = ThingSpeak.writeField(myChannelNumber, 4, ctankPercentage, myWriteAPIKey);
-//  if (httpCode == 200) {
-//    Serial.println("Channel write successful.");
-//  }
-//  else {
-//    Serial.println("Problem writing to channel. HTTP error code " + String(httpCode));
-//  }
-  httpCode = ThingSpeak.writeField(myChannelNumber, 5, cconsumedLitres, myWriteAPIKey);
-//  if (httpCode == 200) {
-//    Serial.println("Channel write successful.");
-//  }
-//  else {
-//    Serial.println("Problem writing to channel. HTTP error code " + String(httpCode));
-//  }
-  httpCode = ThingSpeak.writeField(myChannelNumber, 6, cavailableLitres, myWriteAPIKey);
-//  if (httpCode == 200) {
-//    Serial.println("Channel write successful.");
-//  }
-//  else {
-//    Serial.println("Problem writing to channel. HTTP error code " + String(httpCode));
-//  }
+  ThingSpeak.setField(1, tankPercentage);
+  ThingSpeak.setField(2, consumedLitres);
+  ThingSpeak.setField(3, availableLitres);
+
+  ThingSpeak.setField(4, ctankPercentage);
+  ThingSpeak.setField(5, cconsumedLitres);
+  ThingSpeak.setField(6, cavailableLitres);
+
+  int httpCode = ThingSpeak.writeFields(myChannelNumber, myWriteAPIKey);
+  if (httpCode == 200) {
+    Serial.println("Channel write successful.");
+  }
+  else {
+    Serial.println("Problem writing to channel. HTTP error code " + String(httpCode));
+  }
 }
 
 void loop() {
   ExtractSensorData();
+
+  //Initialize Timers.
   Blynk.run();
-  timer.run(); // Initiates SimpleTimer
-  //uploadTimer.run();
+  timer.run();
+  uploadTimer.run();
   notifyTimer.run();
 }
