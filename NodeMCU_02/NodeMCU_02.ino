@@ -198,15 +198,15 @@ BLYNK_WRITE(V10) {
 
 void notifyToApp() 
 {
-  if(compressorTankPercentage > 90 && !isSTankFullEmailSent) {
+  if(compressorTankPercentage > 90 && isSTankFullEmailSent == false) {
      Blynk.email("Compressor Tank", "Compressor Tank is Full");  
      isSTankFullEmailSent = true;
   }
-  else if(compressorTankPercentage < 90 && compressorTankPercentage > 50) {
+  else if(compressorTankPercentage < 90 && compressorTankPercentage > 10) {
     isSTankFullEmailSent = false;
   }
   
-  if (compressorTankPercentage < 40 && compressorTankPercentage > 10 && !isSTankLowEmailSent) {
+  if (compressorTankPercentage < 40 && compressorTankPercentage > 10 && isSTankLowEmailSent == false) {
       Blynk.email("Compressor Tank", "Quarter Level reached. Please Refill.");
       isSTankLowEmailSent = true;
   }
@@ -214,7 +214,7 @@ void notifyToApp()
     isSTankLowEmailSent = false; 
   }
   
-  if(cementTankPercentage > 95 && !isCTankFullEmailSent) {
+  if(cementTankPercentage > 95 && isCTankFullEmailSent == false) {
       Blynk.email("Cement Tank", "Cement Tank is Full.");
       isCTankFullEmailSent = true;  
   }
@@ -222,11 +222,8 @@ void notifyToApp()
     isCTankFullEmailSent = false;
   }
   
-  if(cementTankPercentage < 40 && cementTankPercentage > 10 && !isCTankLowEmailSent) {
+  if(cementTankPercentage < 40 && cementTankPercentage > 10 && isCTankLowEmailSent == false) {
         Blynk.email("Cement Tank", "Quarter Level reached. Please Refill.");
-        Serial.println(isCTankLowEmailSent );
-        Serial.println("Cement tank quarter mail sent..");
-        
         isCTankLowEmailSent = true;
   }
   else if(cementTankPercentage > 40) {
