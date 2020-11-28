@@ -26,6 +26,8 @@ WiFiClient client;
 
 BlynkTimer timer;
 BlynkTimer uploadTimer;
+BlynkTimer notifyTimer;
+
 long systemUptime, uptimesec;
 long distance, cdistance;
 
@@ -38,6 +40,9 @@ bool isSTankFullEmailSent = true;
 bool isCTankLowEmailSent = true;
 bool isCTankFullEmailSent = true;
 
+int isSlow, isShigh;
+int isSlowNotify, isShighNotify;
+
 void setup() {
   Serial.println("----------------SETUP INITIATED--------------------------");
   Blynk.begin(auth, ssid, pass);
@@ -45,6 +50,7 @@ void setup() {
   // Setup a function to be called every second
   timer.setInterval(1000L, uploadtoBlynk);
   uploadTimer.setInterval(120000L, uploadToThingSpeak);
+  notifyTimer.setInterval(900000L, notifyToApp); // 15 mins
 
   isSTankLowEmailSent = false;
   isSTankFullEmailSent = false;
@@ -87,6 +93,9 @@ void ExtractSensorData() {
   availableLitres = root["SAvailableLitres"];
   consumedLitres = root["SConsumedLitres"];
   waterlevelat = root["SWaterLevel"];
+  
+  isSlow = root["isSlow"];
+  isShigh = root["isShigh"];
   
   //Serial.println("ArduinoUptime ");
   //Serial.print(systemUptime);
@@ -187,12 +196,67 @@ BLYNK_WRITE(V10) {
   }
 }
 
+void notifyToApp() 
+{
+  if(compressorTankPercentage > 90 && !isSTankFullEmailSent) {
+     Blynk.email("Compressor Tank", "Compressor Tank is Full");  
+     isSTankFullEmailSent = true;
+  }
+  else if(compressorTankPercentage < 90 && compressorTankPercentage > 50) {
+    isSTankFullEmailSent = false;
+  }
+  
+  if (compressorTankPercentage < 40 && compressorTankPercentage > 10 && !isSTankLowEmailSent) {
+      Blynk.email("Compressor Tank", "Quarter Level reached. Please Refill.");
+      isSTankLowEmailSent = true;
+  }
+  else if(compressorTankPercentage > 40) {
+    isSTankLowEmailSent = false; 
+  }
+  
+  if(cementTankPercentage > 95 && !isCTankFullEmailSent) {
+      Blynk.email("Cement Tank", "Cement Tank is Full.");
+      isCTankFullEmailSent = true;  
+  }
+  else if(cementTankPercentage > 20) {
+    isCTankFullEmailSent = false;
+  }
+  
+  if(cementTankPercentage < 40 && cementTankPercentage > 10 && !isCTankLowEmailSent) {
+        Blynk.email("Cement Tank", "Quarter Level reached. Please Refill.");
+        Serial.println(isCTankLowEmailSent );
+        Serial.println("Cement tank quarter mail sent..");
+        
+        isCTankLowEmailSent = true;
+  }
+  else if(cementTankPercentage > 40) {
+    isCTankLowEmailSent = false;
+  }
+    
+  if(isSlowNotify == 0 && isSlow == 1) {
+    Blynk.notify("Sintex Tank is Empty!! Please switch On Motor.");
+    Blynk.email("Sintex Tank", "Quarter Level reached. Please Refill.");
+    isSlowNotify = 1;
+  }
+  else if(isSlow == 0) {
+    isSlowNotify = 0;
+  }
+
+  if(isShighNotify == 0 && isShigh == 1) {
+    Blynk.notify("Sintex Tank is Full!! Please switch Off Motor.");
+    Blynk.email("Sintex Tank", "Sintex Tank is Full!! Please switch Off Motor.");
+    isShighNotify = 1;
+  }
+  else if(isShigh == 0) {
+    isShighNotify = 0;
+  }
+}
+
 void uploadToThingSpeak()
 {
   //Upload to Thinkspeak
   ThingSpeak.setField(7, tankPercentage);
   ThingSpeak.setField(8, consumedLitres);
-  ThingSpeak.setField(9, availableLitres);
   
   int httpCode = ThingSpeak.writeFields(myChannelNumber, myWriteAPIKey);
   if (httpCode == 200) {
@@ -209,4 +273,5 @@ void loop() {
   Blynk.run();
   timer.run(); // Initiates SimpleTimer
   uploadTimer.run();
+  notifyTimer.run();
 }
