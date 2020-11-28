@@ -82,9 +82,9 @@ void ExtractSensorData() {
   if(root == JsonObject::invalid()) 
     return;
 
-  Serial.println("JSON Received and Parsed");
-  root.prettyPrintTo(Serial);
-  Serial.println("");
+//  Serial.println("JSON Received and Parsed");
+//  root.prettyPrintTo(Serial);
+//  Serial.println("");
 
   systemUptime=root["ArduinoUptime"];
   distance=root["SSensorDistance"];
@@ -134,7 +134,7 @@ void uploadtoBlynk(){
   Serial.println(compressorTankPercentage);
 
   Blynk.virtualWrite(V8, cementTankPercentage);
-  Serial.println(cementTankPercentage);
+  //Serial.println(cementTankPercentage);
 }
 
 BLYNK_CONNECTED(){
@@ -143,57 +143,10 @@ BLYNK_CONNECTED(){
 
 BLYNK_WRITE(V0) {
   compressorTankPercentage = param.asInt();
-
-  if(compressorTankPercentage > 90) {
-    if(!isSTankFullEmailSent) {
-      Blynk.email("Compressor Tank", "Compressor Tank is Full");  
-      isSTankFullEmailSent = true;
-    }
-  }
-  else if(compressorTankPercentage > 20) {
-    isSTankFullEmailSent = false;
-  }
-   
-  if (compressorTankPercentage < 40 && compressorTankPercentage > 10) {
-    if (!isSTankLowEmailSent) {
-      Blynk.email("Compressor Tank", "Quarter Level reached. Please Refill.");
-      //Serial.println(isSTankLowEmailSent);
-      //Serial.println("Compressor mail sent..");
-      isSTankLowEmailSent = true; 
-    }
-  }
-  else if(compressorTankPercentage > 20) {
-    isSTankLowEmailSent = false; 
-  }
 }
 
 BLYNK_WRITE(V10) {
   cementTankPercentage = param.asInt();
-  
-  if(cementTankPercentage == 100) {
-    if (!isCTankFullEmailSent) {
-      Blynk.email("Cement Tank", "Cement Tank is Full.");
-      Serial.println(isCTankFullEmailSent);
-      Serial.println("Cement tank mail sent..");
-      isCTankFullEmailSent = true;  
-    }
-  }
-  else {
-    isCTankFullEmailSent = false;
-  }
-  
-  if(cementTankPercentage < 40 && cementTankPercentage > 10) {
-    if (!isCTankLowEmailSent) {
-        Blynk.email("Cement Tank", "Quarter Level reached. Please Refill.");
-        Serial.println(isCTankLowEmailSent );
-        Serial.println("Cement tank quarter mail sent..");
-        
-        isCTankLowEmailSent = true;  
-    }
-  }
-  else {
-    isCTankLowEmailSent = false;
-  }
 }
 
 void notifyToApp() 
