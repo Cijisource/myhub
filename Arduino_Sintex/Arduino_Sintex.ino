@@ -11,6 +11,11 @@ float ssensorrestorecalibration;
 float stankwidth = 95; //5 feet
 float stanklength = 95; //4.5 feet
 
+int isSlow;
+int isShigh;
+int isClow;
+int isChigh;
+
 void setup() {
   // put your setup code here, to run once:
 
@@ -99,12 +104,26 @@ void checkWaterLevelInSintexTank(JsonObject& root) {
 //  Serial.println("percents");
 //  Serial.println(tanklevelpercentage);
   
-  if(tanklevelpercentage > 100)  {
-    tanklevelpercentage = 100;
-  }
   if(tanklevelpercentage < 0)  {
     tanklevelpercentage = 0;
   }
+  
+  if(tanklevelpercentage < 30 && tanklevelpercentage > 10) {
+    isSlow = 1;
+  }
+  else if(tanklevelpercentage > 30) {
+    isSlow = 0;
+  }
+  
+  if(tanklevelpercentage > 95) {
+    isShigh = 1;
+  }
+  else if(tanklevelpercentage < 95 && tanklevelpercentage > 10) {
+    isShigh = 0;
+  }
+  
+  root["isSlow"] = isSlow;
+  root["isShigh"] = isShigh;
   
   root["STankLevelPercentage"] = (int)tanklevelpercentage;
   root["SWaterLevelAt"] = waterlevelat;
