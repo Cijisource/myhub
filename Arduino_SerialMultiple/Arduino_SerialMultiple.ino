@@ -7,8 +7,8 @@
 #include <ArduinoJson.h>
 SoftwareSerial serialPort(9,10); //Rx and Tx
 
-float stankheight = 103.0; //cms
-long scalibrationvalue = 34;
+float stankheight = 106.7; //cms
+long scalibrationvalue = 33;
 long ssensorrestorecalibration;
 float stankwidth = 153.0; //5 feet
 float stanklength = 153.0; //4.5 feet
