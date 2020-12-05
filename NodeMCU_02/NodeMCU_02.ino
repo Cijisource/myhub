@@ -49,7 +49,7 @@ void setup() {
   ThingSpeak.begin(client);
   // Setup a function to be called every second
   timer.setInterval(1000L, uploadtoBlynk);
-  uploadTimer.setInterval(120000L, uploadToThingSpeak);
+  uploadTimer.setInterval(180000L, uploadToThingSpeak);
   notifyTimer.setInterval(900000L, notifyToApp); // 15 mins
 
   isSTankLowEmailSent = false;
