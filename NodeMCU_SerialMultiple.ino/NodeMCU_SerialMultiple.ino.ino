@@ -40,7 +40,7 @@ int isSlow, isShigh, isClow, isChigh;
 int isSlowNotify, isShighNotify, isClowNotify, isChighNotify;
 
 void setup() {
-  Serial.begin(9600);
+//  Serial.begin(9600);
   Serial.print("----------- Setup... ----------");
   
   Blynk.begin(auth, ssid, pass);
@@ -76,6 +76,7 @@ void ExtractSensorData() {
     //Serial.println("received Data");
     distance = -100;
     Serial.println("Didnt Receive Data");
+    //Serial.println(serialPort.available());
   }  
   
   if(root == JsonObject::invalid()) 
@@ -209,11 +210,11 @@ void uploadToThingSpeak()
 }
 
 void loop() {
-  ExtractSensorData();
-
   //Initialize Timers.
   Blynk.run();
   timer.run();
   uploadTimer.run();
   notifyTimer.run();
+
+  ExtractSensorData();
 }
