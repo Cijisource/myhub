@@ -139,7 +139,7 @@ void setup() {
   uploadTimer.setInterval(120000L, uploadToThingSpeak); // 20 seconds (120000 -- 2 minutes)
   notifyTimer.setInterval(900000L, notifyToApp); // 15 mins  
 
-  systemTimer.setInterval(10000L, setupDateTime);
+  systemTimer.setInterval(900000L, setupDateTime);
     
   Serial.println("Resetting Blynk..");
   Blynk.begin(auth, ssid, pass);
