@@ -75,6 +75,9 @@ void checkWaterLevelInCompressorTank(JsonObject& root) {
   digitalWrite(strigger, LOW);
   duration = pulseIn(secho, HIGH);
   distance = (duration/2) / 29.1;
+
+  //Simulate..
+  distance = 135;
   
   //Serial.println("Compressor duration");
   //Serial.println(duration);
@@ -152,6 +155,9 @@ void checkWaterLevelInCompressorTank(JsonObject& root) {
   digitalWrite(ctrigger, LOW);
   duration = pulseIn(cecho, HIGH);
   distance = (duration/2) / 29.1;
+
+  //simulator.
+  distance = 80;
   
   Serial.println("cement duration");
   Serial.println(duration);
