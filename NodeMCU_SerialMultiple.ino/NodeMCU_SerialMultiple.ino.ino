@@ -106,6 +106,7 @@ void setupWifi() {
 void setupDateTime() { 
   if(DateTime.isTimeValid()) {
     terminal.println("datetime is valid.. hence skipping..");
+	terminal.println("Last Wifi Status.. " + WiFi.status());
     terminal.flush();
     return;
   }
@@ -114,8 +115,8 @@ void setupDateTime() {
    // you can use custom timeZone,server and timeout 
    DateTime.setTimeZone(+5.30); 
    DateTime.setServer("asia.pool.ntp.org"); 
-   DateTime.begin(15 * 1000); 
-   //DateTime.begin(); 
+   //DateTime.begin(15 * 1000); 
+   DateTime.begin(); 
    if (!DateTime.isTimeValid()) { 
      terminal.println("Failed to get time from server."); 
      terminal.flush();
@@ -132,7 +133,7 @@ void setupDateTime() {
    String dateTimenow = DateFormatter::format("%F %I:%M%p.", t);
    Serial.println(dateTimenow); 
    
-   wifiStatus = wifiStatus + WiFi.status();
+   
  }
 
 void setupTimers() {
@@ -228,8 +229,7 @@ void extractSensorData() {
   //Serial.println("----------------------");
 }
 
-void notifyToApp() 
-{
+void notifyToApp() {
   if(isSlowNotify == 0 && isSlow == 1) {
      Blynk.notify("Compressor Tank is Empty!! Please switch On Motor.");
     isSlowNotify = 1;
@@ -263,7 +263,7 @@ void notifyToApp()
   }
 }
 
-void uploadtoBlynk(){  
+void uploadtoBlynk() {  
   Blynk.virtualWrite(V0, tankPercentage);
   Blynk.virtualWrite(V1, distance);
   Blynk.virtualWrite(V2, consumedLitres);
@@ -286,8 +286,7 @@ void uploadtoBlynk(){
   bridge.virtualWrite(V10, ctankPercentage);
 }
 
-void uploadToThingSpeak()
-{
+void uploadToThingSpeak() {
   //Upload to Thinkspeak
   ThingSpeak.setField(1, tankPercentage);
   ThingSpeak.setField(2, consumedLitres);
@@ -312,6 +311,7 @@ void uploadToThingSpeak()
   String dateTimenow = DateFormatter::format("%F %I:%M%p.", t);
   
   thingspeakStatus = thingspeakStatus + dateTimenow;
+  terminal.println("Last Wifi Status.. " + WiFi.status());
   terminal.println("Thingspeak Upload Status.. " + thingspeakStatus);
   terminal.flush();
 }
