@@ -106,7 +106,7 @@ void setupWifi() {
 void setupDateTime() { 
   if(DateTime.isTimeValid()) {
     terminal.println("datetime is valid.. hence skipping..");
-	terminal.println("Last Wifi Status.. " + wifiStatus);
+	terminal.println("Last Wifi Status.. " + WiFi.status());
     terminal.flush();
     return;
   }
@@ -288,8 +288,7 @@ void uploadtoBlynk() {
 }
 
 void uploadToThingSpeak() {
-  wifiStatus = wifiStatus + WiFi.status();
-  
+  wifiStatus = WiFi.status()
   //Upload to Thinkspeak
   ThingSpeak.setField(1, tankPercentage);
   ThingSpeak.setField(2, consumedLitres);
@@ -314,7 +313,7 @@ void uploadToThingSpeak() {
   String dateTimenow = DateFormatter::format("%F %I:%M%p.", t);
   
   thingspeakStatus = thingspeakStatus + dateTimenow;
-  terminal.println("Last Wifi Status.. " + wifiStatus);
+  terminal.println("Last Wifi Status.. " + WiFi.status());
   terminal.println("Thingspeak Upload Status.. " + thingspeakStatus);
   terminal.flush();
 }
@@ -353,8 +352,15 @@ BLYNK_WRITE(V50)
     terminal.println("last wifi status" + wifiStatus);
     terminal.println("---END of MSG--"); 
   } else if (String("ssys") == param.asStr()) {
-	setupDateTime();
-  } else {
+    setupDateTime();
+  } else if (String("sys") == param.asStr()) {
+    time_t t = DateTime.now(); 
+    String dateTimenow = DateFormatter::format("%F %I:%M%p.", t);
+	
+    terminal.println("System Time.." + dateTimenow);
+    terminal.println("---END of MSG--");
+  }
+  else {
     // Send it back
     terminal.print("You said:");
     terminal.write(param.getBuffer(), param.getLength());
