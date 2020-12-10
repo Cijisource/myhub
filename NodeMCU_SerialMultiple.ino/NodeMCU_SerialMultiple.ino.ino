@@ -350,6 +350,8 @@ BLYNK_WRITE(V50)
   } else if (String("lws") == param.asStr()) {
     terminal.println("last wifi status" + wifiStatus);
     terminal.println("---END of MSG--"); 
+  } else if (String("ssys") == param.asStr()) {
+	setupDateTime();
   } else {
     // Send it back
     terminal.print("You said:");
