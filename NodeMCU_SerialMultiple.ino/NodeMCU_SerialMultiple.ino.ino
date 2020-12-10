@@ -1,5 +1,4 @@
 #include <SoftwareSerial.h>
-SoftwareSerial serialPort(D1,D0);
 #include <ArduinoJson.h>
 #include "ESPDateTime.h"
 
@@ -8,10 +7,18 @@ SoftwareSerial serialPort(D1,D0);
 #include <BlynkSimpleEsp8266.h>
 #include "ThingSpeak.h"
 
-unsigned long myChannelNumber = 1184761;
-const char * myWriteAPIKey = "Z85MB42QWY3T4VGG";
+SoftwareSerial serialPort(D1,D0);
+BlynkTimer uploadBlynkTimer;
+BlynkTimer uploadThingSpeakTimer;
+BlynkTimer notifyTimer;
+BlynkTimer systemTimer;
 
 WidgetBridge bridge(V0);
+WiFiClient client;
+WidgetTerminal terminal(V50);
+
+unsigned long myChannelNumber = 1184761;
+const char * myWriteAPIKey = "Z85MB42QWY3T4VGG";
 
 char auth[] = "DYLNiU66yHBL8I09OrJ0g5X4r_AbS66J";
 
@@ -26,61 +33,12 @@ char auth[] = "DYLNiU66yHBL8I09OrJ0g5X4r_AbS66J";
 //char ssid[] = "Cijai_ComplexClone";
 //char pass[] = "9000150002";
 
-WiFiClient client;
-WidgetTerminal terminal(V50);
 String setupConfiguration = "---";
 String serialPortStatus = "----";
 String thingspeakStatus = "----";
 String receivedJson = "RECEIVED JSON";
 String lastDataReceivedTime = "";
 String wifiStatus = "";
-
-// You can send commands from Terminal to your hardware. Just use
-// the same Virtual Pin as your Terminal Widget
-BLYNK_WRITE(V50)
-{  
-  // if you type "Marco" into Terminal Widget - it will respond: "Polo:"
-  if (String("Marco") == param.asStr()) {
-    terminal.println("You said: 'Marco'") ;
-    terminal.println("I said: 'Polo'") ;
-  } else if (String("lss") == param.asStr()) {
-    terminal.println(serialPortStatus);
-    terminal.println("---END of MSG--");  
-  } else if ( String("lrd") == param.asStr()) {
-    terminal.println(receivedJson); 
-    terminal.println("---END of MSG--");  
-  } else if (String("lst") == param.asStr()) {
-    terminal.println(lastDataReceivedTime);
-    terminal.println("---END of MSG--");  
-  } else if (String("crd") == param.asStr()) {
-    receivedJson = "";
-    terminal.clear();
-  } else if (String("sdata") == param.asStr()) {
-    terminal.println(setupConfiguration);
-    terminal.println("---END of MSG--"); 
-  } else if (String("lts") == param.asStr()) {
-    terminal.println(thingspeakStatus);
-    terminal.println("---END of MSG--"); 
-  } else if (String("lws") == param.asStr()) {
-    terminal.println("last wifi status" + wifiStatus);
-    terminal.println("---END of MSG--"); 
-  } else {
-    // Send it back
-    terminal.print("You said:");
-    terminal.write(param.getBuffer(), param.getLength());
-    terminal.println();
-    terminal.clear();
-  }
-
-  // Ensure everything is sent
-  terminal.flush();
-}
-
-BlynkTimer timer;
-BlynkTimer sensorDataTimer;
-BlynkTimer uploadTimer;
-BlynkTimer notifyTimer;
-BlynkTimer systemTimer;
 
 long systemUptime, uptimesec;
 long distance, cdistance;
@@ -101,6 +59,18 @@ void setup() {
 
   Serial.print("----------- Setup... ----------");
  
+  setupWifi();
+  setupTimers();
+    
+  Serial.println("Setting Blynk & ThingSpeak..");
+  Blynk.begin(auth, ssid, pass);
+  ThingSpeak.begin(client);
+
+  setupDateTime();
+  Serial.print("----------- END Setup... ----------");
+}
+
+void setupWifi() {
   WiFi.begin(ssid, pass);             // Connect to the network
   Serial.print("Connecting to ");
   setupConfiguration = setupConfiguration + "Connecting to " + ssid;
@@ -131,36 +101,9 @@ void setup() {
   Serial.print("IP address:\t");
   Serial.println(WiFi.localIP());         // Send the IP address of the ESP8266 to the computer
   setupConfiguration = setupConfiguration + "\n" + "Connection established!" + "IP address:\t" + WiFi.localIP().toString();
-  
-  Serial.println("Resetting Timers..");         
-  // Setup a function to be called every second
-  sensorDataTimer.setInterval(1000L, extractSensorData); // 1 second
-  timer.setInterval(1000L, uploadtoBlynk); // 1 second
-  uploadTimer.setInterval(120000L, uploadToThingSpeak); // 20 seconds (120000 -- 2 minutes)
-  notifyTimer.setInterval(900000L, notifyToApp); // 15 mins  
-
-  systemTimer.setInterval(900000L, setupDateTime);
-    
-  Serial.println("Resetting Blynk..");
-  Blynk.begin(auth, ssid, pass);
-  ThingSpeak.begin(client);
-
-  setupDateTime();
-//  DateTimeParts p = DateTime.getParts(); 
-//  Serial.printf("%04d/%02d/%02d %02d:%02d:%02d %ld %+05d\n", p.getYear(), 
-//                 p.getMonth(), p.getMonthDay(), p.getHours(), p.getMinutes(), 
-//                 p.getSeconds(), p.getTime(), p.getTimeZone()); 
-//   Serial.println("--------------------"); 
-   time_t t = DateTime.now(); 
-//   Serial.println(DateFormatter::format("%Y/%m/%d %H:%M:%S", t)); 
-//   Serial.println(DateFormatter::format("%x - %I:%M %p", t)); 
-   String dateTimenow = DateFormatter::format("%F %I:%M%p.", t);
-   Serial.println(dateTimenow); 
-
-  Serial.print("----------- END Setup... ----------");
 }
 
- void setupDateTime() { 
+void setupDateTime() { 
   if(DateTime.isTimeValid()) {
     terminal.println("datetime is valid.. hence skipping..");
     terminal.flush();
@@ -177,10 +120,30 @@ void setup() {
      terminal.println("Failed to get time from server."); 
      terminal.flush();
    }
+   
+   //  DateTimeParts p = DateTime.getParts(); 
+//  Serial.printf("%04d/%02d/%02d %02d:%02d:%02d %ld %+05d\n", p.getYear(), 
+//                 p.getMonth(), p.getMonthDay(), p.getHours(), p.getMinutes(), 
+//                 p.getSeconds(), p.getTime(), p.getTimeZone()); 
+//   Serial.println("--------------------"); 
+   time_t t = DateTime.now(); 
+//   Serial.println(DateFormatter::format("%Y/%m/%d %H:%M:%S", t)); 
+//   Serial.println(DateFormatter::format("%x - %I:%M %p", t)); 
+   String dateTimenow = DateFormatter::format("%F %I:%M%p.", t);
+   Serial.println(dateTimenow); 
+   
+   wifiStatus = wifiStatus + WiFi.status();
  }
 
-BLYNK_CONNECTED() {
-  bridge.setAuthToken("ODbXgkyA-fZohqppkwa0qm8QusGnDXCa");
+void setupTimers() {
+  Serial.println("Resetting Timers..");         
+  
+  // Setup a function to be called every second
+  uploadBlynkTimer.setInterval(1000L, uploadtoBlynk); // 1 second
+  uploadThingSpeakTimer.setInterval(120000L, uploadToThingSpeak); // (120000 -- 2 minutes)
+  
+  notifyTimer.setInterval(900000L, notifyToApp); // 15 mins  
+  systemTimer.setInterval(900000L, setupDateTime); // 15 mins 
 }
 
 void extractSensorData() {  
@@ -265,31 +228,6 @@ void extractSensorData() {
   //Serial.println("----------------------");
 }
 
-void uploadtoBlynk(){  
-  wifiStatus = wifiStatus + WiFi.status();
-  
-  Blynk.virtualWrite(V0, tankPercentage);
-  Blynk.virtualWrite(V1, distance);
-  Blynk.virtualWrite(V2, consumedLitres);
-  
-  Blynk.virtualWrite(V3, availableLitres);
-  Blynk.virtualWrite(V4, waterlevelAt);
-  
-  Blynk.virtualWrite(V5, systemUptime);  
-  Blynk.virtualWrite(V6, uptimesec);
-
-  Blynk.virtualWrite(V10, ctankPercentage);
-  Blynk.virtualWrite(V11, cdistance);
-  Blynk.virtualWrite(V12, cconsumedLitres);
-  
-  Blynk.virtualWrite(V13, cavailableLitres);
-  Blynk.virtualWrite(V14, cwaterlevelAt);
-    
-  //Bridge Transmit
-  bridge.virtualWrite(V0, tankPercentage);
-  bridge.virtualWrite(V10, ctankPercentage);
-}
-
 void notifyToApp() 
 {
   if(isSlowNotify == 0 && isSlow == 1) {
@@ -325,6 +263,29 @@ void notifyToApp()
   }
 }
 
+void uploadtoBlynk(){  
+  Blynk.virtualWrite(V0, tankPercentage);
+  Blynk.virtualWrite(V1, distance);
+  Blynk.virtualWrite(V2, consumedLitres);
+  
+  Blynk.virtualWrite(V3, availableLitres);
+  Blynk.virtualWrite(V4, waterlevelAt);
+  
+  Blynk.virtualWrite(V5, systemUptime);  
+  Blynk.virtualWrite(V6, uptimesec);
+
+  Blynk.virtualWrite(V10, ctankPercentage);
+  Blynk.virtualWrite(V11, cdistance);
+  Blynk.virtualWrite(V12, cconsumedLitres);
+  
+  Blynk.virtualWrite(V13, cavailableLitres);
+  Blynk.virtualWrite(V14, cwaterlevelAt);
+    
+  //Bridge Transmit
+  bridge.virtualWrite(V0, tankPercentage);
+  bridge.virtualWrite(V10, ctankPercentage);
+}
+
 void uploadToThingSpeak()
 {
   //Upload to Thinkspeak
@@ -351,18 +312,61 @@ void uploadToThingSpeak()
   String dateTimenow = DateFormatter::format("%F %I:%M%p.", t);
   
   thingspeakStatus = thingspeakStatus + dateTimenow;
-  terminal.println("Call from thingspeak timer.." + thingspeakStatus);
+  terminal.println("Thingspeak Upload Status.. " + thingspeakStatus);
+  terminal.flush();
+}
+
+BLYNK_CONNECTED() {
+  bridge.setAuthToken("ODbXgkyA-fZohqppkwa0qm8QusGnDXCa");
+}
+
+// You can send commands from Terminal to your hardware. Just use
+// the same Virtual Pin as your Terminal Widget
+BLYNK_WRITE(V50)
+{  
+  // if you type "Marco" into Terminal Widget - it will respond: "Polo:"
+  if (String("Marco") == param.asStr()) {
+    terminal.println("You said: 'Marco'") ;
+    terminal.println("I said: 'Polo'") ;
+  } else if (String("lss") == param.asStr()) {
+    terminal.println(serialPortStatus);
+    terminal.println("---END of MSG--");  
+  } else if ( String("lrd") == param.asStr()) {
+    terminal.println(receivedJson); 
+    terminal.println("---END of MSG--");  
+  } else if (String("lst") == param.asStr()) {
+    terminal.println(lastDataReceivedTime);
+    terminal.println("---END of MSG--");  
+  } else if (String("crd") == param.asStr()) {
+    receivedJson = "";
+    terminal.clear();
+  } else if (String("sdata") == param.asStr()) {
+    terminal.println(setupConfiguration);
+    terminal.println("---END of MSG--"); 
+  } else if (String("lts") == param.asStr()) {
+    terminal.println(thingspeakStatus);
+    terminal.println("---END of MSG--"); 
+  } else if (String("lws") == param.asStr()) {
+    terminal.println("last wifi status" + wifiStatus);
+    terminal.println("---END of MSG--"); 
+  } else {
+    // Send it back
+    terminal.print("You said:");
+    terminal.write(param.getBuffer(), param.getLength());
+    terminal.println();
+    terminal.clear();
+  }
+
+  // Ensure everything is sent
   terminal.flush();
 }
 
 void loop() {
-  //Initialize Timers.
   Blynk.run();
   
-  //sensorDataTimer.run();
-  timer.run();
-  uploadTimer.run();
-  notifyTimer.run();
+  //Initialize Timers.
+  uploadBlynkTimer.run();
+  uploadThingSpeakTimer.run();
   systemTimer.run();
 
   extractSensorData();
