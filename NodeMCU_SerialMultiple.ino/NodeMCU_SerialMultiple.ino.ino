@@ -106,7 +106,7 @@ void setupWifi() {
 void setupDateTime() { 
   if(DateTime.isTimeValid()) {
     terminal.println("datetime is valid.. hence skipping..");
-	terminal.println("Last Wifi Status.. " + WiFi.status());
+	terminal.println("Last Wifi Status.. " + wifiStatus);
     terminal.flush();
     return;
   }
@@ -288,6 +288,8 @@ void uploadtoBlynk() {
 }
 
 void uploadToThingSpeak() {
+  wifiStatus = wifiStatus + WiFi.status();
+  
   //Upload to Thinkspeak
   ThingSpeak.setField(1, tankPercentage);
   ThingSpeak.setField(2, consumedLitres);
@@ -312,7 +314,7 @@ void uploadToThingSpeak() {
   String dateTimenow = DateFormatter::format("%F %I:%M%p.", t);
   
   thingspeakStatus = thingspeakStatus + dateTimenow;
-  terminal.println("Last Wifi Status.. " + WiFi.status());
+  terminal.println("Last Wifi Status.. " + wifiStatus);
   terminal.println("Thingspeak Upload Status.. " + thingspeakStatus);
   terminal.flush();
 }
