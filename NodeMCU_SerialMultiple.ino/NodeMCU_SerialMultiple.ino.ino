@@ -133,7 +133,8 @@ void setupDateTime() {
    String dateTimenow = DateFormatter::format("%F %I:%M%p.", t);
    Serial.println(dateTimenow); 
    
-   
+   terminal.println("Date Sync completed successfully!!" + dateTimenow); 
+   terminal.flush();
  }
 
 void setupTimers() {
