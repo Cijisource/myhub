@@ -133,10 +133,10 @@ void setupDateTime() {
     
    // setup this after wifi connected 
    // you can use custom timeZone,server and timeout 
-   DateTime.setTimeZone(+6); 
+   DateTime.setTimeZone(+5.30); 
    DateTime.setServer("asia.pool.ntp.org"); 
-   //DateTime.begin(15 * 1000); 
-   DateTime.begin(); 
+   DateTime.begin(3000 * 1000); 
+   //DateTime.begin(); 
    if (!DateTime.isTimeValid()) { 
      terminal.println("Failed to get time from server."); 
      terminal.flush();
@@ -304,7 +304,7 @@ void uploadtoBlynk(){
   Blynk.virtualWrite(V9, waterlevelat);
 
   Blynk.virtualWrite(V7, compressorTankPercentage);
-  Serial.println(compressorTankPercentage);
+  //Serial.println(compressorTankPercentage);
 
   Blynk.virtualWrite(V8, cementTankPercentage);
   //Serial.println(cementTankPercentage);
