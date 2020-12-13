@@ -24,14 +24,14 @@ char auth[] = "DYLNiU66yHBL8I09OrJ0g5X4r_AbS66J";
 
 // Your WiFi credentials.
 // Set password to "" for open networks.
- char ssid[] = "Cijaiz_Home";
- char pass[] = "M00n5050";
+// char ssid[] = "Cijaiz_Home";
+// char pass[] = "M00n5050";
 //char ssid[] = "Galaxy A719DBD";
 //char pass[] = "mygalaxya71";
 //char ssid[] = "Cijaiz complex";
 //char pass[] = "9000150001";
-//char ssid[] = "Cijai_ComplexClone";
-//char pass[] = "9000150002";
+char ssid[] = "Cijai_ComplexClone";
+char pass[] = "9000150002";
 
 String setupConfiguration = "---";
 String serialPortStatus = "----";
@@ -106,7 +106,7 @@ void setupWifi() {
 void setupDateTime() { 
   if(DateTime.isTimeValid()) {
     terminal.println("datetime is valid.. hence skipping..");
-	terminal.println("Last Wifi Status.. " + WiFi.status());
+	  terminal.println("Last Wifi Status.. " + wifiStatus);
     terminal.flush();
     return;
   }
@@ -122,7 +122,7 @@ void setupDateTime() {
      terminal.flush();
    }
    
-   //  DateTimeParts p = DateTime.getParts(); 
+//  DateTimeParts p = DateTime.getParts(); 
 //  Serial.printf("%04d/%02d/%02d %02d:%02d:%02d %ld %+05d\n", p.getYear(), 
 //                 p.getMonth(), p.getMonthDay(), p.getHours(), p.getMinutes(), 
 //                 p.getSeconds(), p.getTime(), p.getTimeZone()); 
@@ -313,13 +313,15 @@ void uploadToThingSpeak() {
   String dateTimenow = DateFormatter::format("%F %I:%M%p.", t);
   
   thingspeakStatus = thingspeakStatus + dateTimenow;
-  terminal.println("Last Wifi Status.. " + WiFi.status());
+  terminal.println("Last Wifi Status.. " + wifiStatus);
   terminal.println("Thingspeak Upload Status.. " + thingspeakStatus);
   terminal.flush();
 }
 
 BLYNK_CONNECTED() {
   bridge.setAuthToken("ODbXgkyA-fZohqppkwa0qm8QusGnDXCa");
+  Blynk.email("{DEVICE_NAME} Successfully Connected", "{DEVICE_NAME} Connected");
+  Blynk.notify("{DEVICE_NAME} Successfully Connected");
 }
 
 // You can send commands from Terminal to your hardware. Just use
@@ -379,6 +381,7 @@ void loop() {
   uploadBlynkTimer.run();
   uploadThingSpeakTimer.run();
   systemTimer.run();
+  notifyTimer.run();
 
   extractSensorData();
 }
