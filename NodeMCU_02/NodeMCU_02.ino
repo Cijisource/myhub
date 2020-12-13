@@ -22,13 +22,13 @@ char auth[] = "ODbXgkyA-fZohqppkwa0qm8QusGnDXCa";
 
 // Your WiFi credentials.
 // Set password to "" for open networks.
- char ssid[] = "Cijaiz_Home";
- char pass[] = "M00n5050";
+// char ssid[] = "Cijaiz_Home";
+// char pass[] = "M00n5050";
 //char ssid[] = "Galaxy A719DBD";
 //char pass[] = "mygalaxya71";
 
-//char ssid[] = "Cijaiz complex";
-//char pass[] = "9000150001";
+char ssid[] = "Cijaiz complex";
+char pass[] = "9000150001";
 
 WiFiClient client;
 WidgetTerminal terminal(V50);
@@ -126,7 +126,7 @@ void setupWifi() {
 void setupDateTime() { 
   if(DateTime.isTimeValid()) {
     terminal.println("datetime is valid.. hence skipping..");
-  terminal.println("Last Wifi Status.. " + WiFi.status());
+    terminal.println("Last Wifi Status.. " + wifiStatus);
     terminal.flush();
     return;
   }
@@ -135,8 +135,8 @@ void setupDateTime() {
    // you can use custom timeZone,server and timeout 
    DateTime.setTimeZone(+5.30); 
    DateTime.setServer("asia.pool.ntp.org"); 
-   DateTime.begin(3000 * 1000); 
-   //DateTime.begin(); 
+   //DateTime.begin(3000 * 1000); 
+   DateTime.begin(); 
    if (!DateTime.isTimeValid()) { 
      terminal.println("Failed to get time from server."); 
      terminal.flush();
@@ -312,6 +312,8 @@ void uploadtoBlynk(){
 
 void uploadToThingSpeak()
 { 
+  wifiStatus = wifiStatus + WiFi.status();
+  
   //Upload to Thinkspeak
   ThingSpeak.setField(7, tankPercentage);
   ThingSpeak.setField(8, consumedLitres);
@@ -338,6 +340,7 @@ void uploadToThingSpeak()
 
 BLYNK_CONNECTED(){
   Blynk.email("{DEVICE_NAME} Successfully Connected", "{DEVICE_NAME} Connected");
+  Blynk.notify("{DEVICE_NAME} Successfully Connected");
 }
 
 BLYNK_WRITE(V0) {
@@ -404,6 +407,7 @@ void loop() {
   // Initiates SimpleTimer
   uploadBlynkTimer.run(); 
   uploadThingSpeakTimer.run();
+  notifyTimer.run();
   systemTimer.run();
 
   ExtractSensorData();
