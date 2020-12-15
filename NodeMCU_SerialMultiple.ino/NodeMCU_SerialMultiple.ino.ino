@@ -288,7 +288,7 @@ void uploadtoBlynk() {
 }
 
 void uploadToThingSpeak() {
-  wifiStatus = wifiStatus + WiFi.status();
+  wifiStatus = WiFi.status();
   //Upload to Thinkspeak
   ThingSpeak.setField(1, tankPercentage);
   ThingSpeak.setField(2, consumedLitres);
