@@ -164,10 +164,9 @@ void extractSensorData() {
   serialPortStatus = portStatus;
   
   if (serialPort.available() > 0) {
-    //Serial.println("received Data");
-    distance = -100;
-//    Serial.println("Didnt Receive Data");
-//    Serial.println(portStatus);
+      //distance = -100;
+      Serial.println("Didnt Receive Data");
+      //Serial.println(portStatus);
     //Serial.println(serialPort.available());
   }
   else {
