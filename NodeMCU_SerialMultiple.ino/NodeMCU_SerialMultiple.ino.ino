@@ -41,7 +41,7 @@ String lastDataReceivedTime = "";
 String wifiStatus = "";
 
 long systemUptime, uptimesec;
-long distance, cdistance;
+long distance, cdistance, lastDistance;;
 int tankPercentage, ctankPercentage;
 float availableLitres, cavailableLitres, waterlevelAt, cwaterlevelAt; 
 float consumedLitres, cconsumedLitres;
@@ -149,6 +149,7 @@ void setupTimers() {
 }
 
 void extractSensorData() {  
+  
   StaticJsonBuffer<1000> jsonBuffer;
   JsonObject& root = jsonBuffer.parseObject(serialPort);
 
@@ -165,6 +166,7 @@ void extractSensorData() {
   
   if (serialPort.available() > 0) {
       //distance = -100;
+      distance = lastDistance;
       Serial.println("Didnt Receive Data");
       //Serial.println(portStatus);
     //Serial.println(serialPort.available());
@@ -172,6 +174,7 @@ void extractSensorData() {
   else {
       time_t t = DateTime.now(); 
       lastDataReceivedTime = DateFormatter::format("%F %I:%M%p.", t);
+      lastDistance = root["SensorDistance"];
   }
   
   if(root == JsonObject::invalid()) 
@@ -288,6 +291,7 @@ void uploadtoBlynk() {
 
 void uploadToThingSpeak() {
   wifiStatus = WiFi.status();
+  
   //Upload to Thinkspeak
   ThingSpeak.setField(1, tankPercentage);
   ThingSpeak.setField(2, consumedLitres);
