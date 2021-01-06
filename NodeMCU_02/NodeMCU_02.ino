@@ -27,8 +27,11 @@ char auth[] = "ODbXgkyA-fZohqppkwa0qm8QusGnDXCa";
 //char ssid[] = "Galaxy A719DBD";
 //char pass[] = "mygalaxya71";
 
-char ssid[] = "Cijaiz complex";
-char pass[] = "9000150001";
+//char ssid[] = "Cijaiz complex";
+//char pass[] = "9000150001";
+
+char ssid[] = "jeimahil";
+char pass[] = "mahilvis2017";
 
 WiFiClient client;
 WidgetTerminal terminal(V50);
@@ -228,7 +231,7 @@ void ExtractSensorData() {
 void notifyToApp() 
 {
   if(compressorTankPercentage > 90 && isSTankFullEmailSent == false) {
-     Blynk.email("Compressor Tank", "Compressor Tank is Full");  
+     Blynk.email("Compressor Tank - Full", "Compressor Tank is Full");  
      isSTankFullEmailSent = true;
 
      terminal.println("Compressor Tank is Full");
@@ -238,9 +241,9 @@ void notifyToApp()
     isSTankFullEmailSent = false;
   }
   
-  if (compressorTankPercentage < 40 && compressorTankPercentage > 10 && isSTankLowEmailSent == false) {
-      Blynk.email("Compressor Tank", "Quarter Level reached. Please Refill.");
-      terminal.println("Quarter Level reached. Please Refill.");
+  if (compressorTankPercentage < 25 && compressorTankPercentage > 10 && isSTankLowEmailSent == false) {
+      Blynk.email("Compressor Tank - Empty", "Compressor Tank is Empty. Please Refill.");
+      terminal.println("Tank is Empty. Please Refill");
       terminal.flush();
       isSTankLowEmailSent = true;
   }
@@ -249,7 +252,7 @@ void notifyToApp()
   }
   
   if(cementTankPercentage > 95 && isCTankFullEmailSent == false) {
-      Blynk.email("Cement Tank", "Cement Tank is Full.");
+      Blynk.email("Cement Tank - Full", "Cement Tank is Full.");
       terminal.println("Cement Tank is Full.");
       terminal.flush();
       isCTankFullEmailSent = true;  
@@ -258,10 +261,10 @@ void notifyToApp()
     isCTankFullEmailSent = false;
   }
   
-  if(cementTankPercentage < 40 && cementTankPercentage > 10 && isCTankLowEmailSent == false) {
-      Blynk.email("Cement Tank", "Quarter Level reached. Please Refill.");
+  if(cementTankPercentage < 25 && cementTankPercentage > 10 && isCTankLowEmailSent == false) {
+      Blynk.email("Cement Tank - Empty", "Cement Tank is Empty. Please Refill.");
       isCTankLowEmailSent = true;
-      terminal.println("Quarter Level reached. Please Refill.");
+      terminal.println("Tank is Empty. Please Refill.");
       terminal.flush();
   }
   else if(cementTankPercentage > 40) {
@@ -270,7 +273,7 @@ void notifyToApp()
     
   if(isSlowNotify == 0 && isSlow == 1) {
     Blynk.notify("Sintex Tank is Empty!! Please switch On Motor.");
-    Blynk.email("Sintex Tank", "Sintex Tank is Empty!! Please switch On Motor.");
+    Blynk.email("Sintex Tank - Empty", "Sintex Tank is Empty!! Please switch On Motor.");
     isSlowNotify = 1;
 
     terminal.println("Sintex Tank is Empty!! Please switch On Motor.");
@@ -282,7 +285,7 @@ void notifyToApp()
 
   if(isShighNotify == 0 && isShigh == 1) {
     Blynk.notify("Sintex Tank is Full!! Please switch Off Motor.");
-    Blynk.email("Sintex Tank", "Sintex Tank is Full!! Please switch Off Motor.");
+    Blynk.email("Sintex Tank - Full", "Sintex Tank is Full!! Please switch Off Motor.");
     isShighNotify = 1;
 
     terminal.println("Sintex Tank is Full!! Please switch Off Motor.");
