@@ -92,13 +92,15 @@ void setupTimers() {
   
   notifyTimer.setInterval(900000L, notifyToApp); // 15 mins  
   systemTimer.setInterval(900000L, setupDateTime); // 15 mins 
-  wifiChecker.setInterval(900000L, setupWifi); // 30 mins 
+  wifiChecker.setInterval(900000L, setupWifi); // 15 mins 
 }
 
 void setupWifi() {
   String wifiChecklog = "Performing Wifi Check.. ..";
+  Serial.print(wifiChecklog);
   if (WiFi.status() == WL_CONNECTED) { // Skip since network connected..
     wifiChecklog = wifiChecklog + "Wifi Connection Exists.. Hence Skipping..";
+    terminal.println(wifiChecklog);
     terminal.flush();
     return;
   }
@@ -399,6 +401,8 @@ BLYNK_WRITE(V50)
     terminal.println("---END of MSG--"); 
   } else if (String("ssys") == param.asStr()) {
     setupDateTime();
+  } else if (String("swifi") == param.asStr()) {
+    setupWifi();
   } else if (String("sys") == param.asStr()) {
     time_t t = DateTime.now(); 
     String dateTimenow = DateFormatter::format("%F %I:%M%p.", t);
