@@ -14,6 +14,7 @@ BlynkTimer uploadBlynkTimer;
 BlynkTimer uploadThingSpeakTimer;
 BlynkTimer notifyTimer;
 BlynkTimer systemTimer;
+BlynkTimer wifiChecker;
 
 unsigned long myChannelNumber = 1184761;
 const char * myWriteAPIKey = "Z85MB42QWY3T4VGG";
@@ -91,10 +92,18 @@ void setupTimers() {
   
   notifyTimer.setInterval(900000L, notifyToApp); // 15 mins  
   systemTimer.setInterval(900000L, setupDateTime); // 15 mins 
+  wifiChecker.setInterval(900000L, setupWifi); // 30 mins 
 }
 
 void setupWifi() {
-  WiFi.begin(ssid, pass);             // Connect to the network
+  String wifiChecklog = "Performing Wifi Check.. ..";
+  if (WiFi.status() == WL_CONNECTED) { // Skip since network connected..
+    wifiChecklog = wifiChecklog + "Wifi Connection Exists.. Hence Skipping..";
+    terminal.flush();
+    return;
+  }
+  
+  WiFi.begin(ssid, pass); // Connect to the network
   Serial.print("Connecting to ");
   setupConfiguration = setupConfiguration + "Connecting to " + ssid;
   terminal.print(ssid);
@@ -119,11 +128,16 @@ void setupWifi() {
     Serial.print(++i); Serial.print(' ');
   }
 
+  wifiChecklog = wifiChecklog + "Wifi connection lost.. Hence Reconnecting...";
+  wifiChecklog = wifiChecklog + "\n" + "Connection established!";
   Serial.println('\n');
   Serial.println("Connection established!");  
   Serial.print("IP address:\t");
   Serial.println(WiFi.localIP());         // Send the IP address of the ESP8266 to the computer
   setupConfiguration = setupConfiguration + "\n" + "Connection established!" + "IP address:\t" + WiFi.localIP().toString();
+  
+  terminal.println(wifiChecklog);
+  terminal.flush();
 }
 
 void setupDateTime() { 
@@ -412,6 +426,7 @@ void loop() {
   uploadThingSpeakTimer.run();
   notifyTimer.run();
   systemTimer.run();
+  wifiChecker.run();
 
   ExtractSensorData();
 }
