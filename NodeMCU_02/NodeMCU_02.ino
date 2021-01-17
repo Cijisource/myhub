@@ -98,7 +98,9 @@ void setupTimers() {
 void setupWifi() {
   String wifiChecklog = "Performing Wifi Check.. ..";
   Serial.print(wifiChecklog);
+  Serial.print(WiFi.status());
   if (WiFi.status() == WL_CONNECTED) { // Skip since network connected..
+    WiFi.begin(ssid, pass); // Connect to the network
     wifiChecklog = wifiChecklog + "Wifi Connection Exists.. Hence Skipping..";
     terminal.println(wifiChecklog);
     terminal.flush();
