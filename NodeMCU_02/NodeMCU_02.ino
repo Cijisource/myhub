@@ -87,7 +87,7 @@ void setup() {
 
 void setupTimers() {
   // Setup a function to be called every second
-  uploadBlynkTimer.setInterval(1000L, uploadtoBlynk); // 1 second
+  uploadBlynkTimer.setInterval(10000L, uploadtoBlynk); // 1 second
   uploadThingSpeakTimer.setInterval(140000L, uploadToThingSpeak); // (120000 -- 2 minutes & 20 seconds)
   
   notifyTimer.setInterval(900000L, notifyToApp); // 15 mins  
