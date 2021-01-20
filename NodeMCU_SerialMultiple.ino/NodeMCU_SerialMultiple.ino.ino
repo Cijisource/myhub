@@ -141,7 +141,7 @@ void setupTimers() {
   Serial.println("Resetting Timers..");         
   
   // Setup a function to be called every second
-  uploadBlynkTimer.setInterval(1000L, uploadtoBlynk); // 1 second
+  uploadBlynkTimer.setInterval(10000L, uploadtoBlynk); // 1 second
   uploadThingSpeakTimer.setInterval(120000L, uploadToThingSpeak); // (120000 -- 2 minutes)
   
   notifyTimer.setInterval(900000L, notifyToApp); // 15 mins  
