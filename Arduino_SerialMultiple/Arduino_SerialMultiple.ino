@@ -21,11 +21,11 @@ long csensorrestorecalibration;
 float ctankwidth = 132.08; //5 feet
 float ctanklength = 304.8; //4.5 feet
 
-float mtankheight = 76.2; //4 feet
+float mtankheight = 74; //4 feet
 long mcalibrationvalue = 5;
 long msensorrestorecalibration;
-float mtankwidth = 132.08; //5 feet
-float mtanklength = 304.8; //4.5 feet
+float mtankwidth = 59; //5 feet
+float mtanklength = 132; //4.5 feet
 
 int isSlow;
 int isShigh;
