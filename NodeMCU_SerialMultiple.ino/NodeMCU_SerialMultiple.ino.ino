@@ -1,356 +1,422 @@
-#define strigger 7
-#define secho 6
-#define ctrigger 5
-#define cecho 4
-#define mtrigger 3
-#define mecho 2
-
 #include <SoftwareSerial.h>
 #include <ArduinoJson.h>
-SoftwareSerial serialPort(9,10); //Rx and Tx
+#include "ESPDateTime.h"
 
-float stankheight = 106.7; //cms
-long scalibrationvalue = 33;
-long ssensorrestorecalibration;
-float stankwidth = 153.0; //5 feet
-float stanklength = 153.0; //4.5 feet
+#define BLYNK_PRINT Serial  
+#include <ESP8266WiFi.h>
+#include <BlynkSimpleEsp8266.h>
+#include "ThingSpeak.h"
 
-float ctankheight = 76.2; //4 feet
-long ccalibrationvalue = 5;
-long csensorrestorecalibration;
-float ctankwidth = 132.08; //5 feet
-float ctanklength = 304.8; //4.5 feet
+SoftwareSerial serialPort(D1,D0);
+BlynkTimer uploadBlynkTimer;
+BlynkTimer uploadThingSpeakTimer;
+BlynkTimer notifyTimer;
+BlynkTimer systemTimer;
 
-float mtankheight = 74; //4 feet
-long mcalibrationvalue = 5;
-long msensorrestorecalibration;
-float mtankwidth = 59; //5 feet
-float mtanklength = 132; //4.5 feet
+WidgetBridge bridge(V0);
+WiFiClient client;
+WidgetTerminal terminal(V50);
 
-int isSlow;
-int isShigh;
-int isClow;
-int isChigh;
-int isMlow;
-int isMhigh;
+unsigned long myChannelNumber = 1184761;
+const char * myWriteAPIKey = "Z85MB42QWY3T4VGG";
+
+char auth[] = "DYLNiU66yHBL8I09OrJ0g5X4r_AbS66J";
+
+// Your WiFi credentials.
+// Set password to "" for open networks.
+// char ssid[] = "Cijaiz_Home";
+// char pass[] = "M00n5050";
+//char ssid[] = "Galaxy A719DBD";
+//char pass[] = "mygalaxya71";
+//char ssid[] = "Cijaiz complex";
+//char pass[] = "9000150001";
+char ssid[] = "Cijai_ComplexClone";
+char pass[] = "9000150002";
+
+String setupConfiguration = "---";
+String serialPortStatus = "----";
+String thingspeakStatus = "----";
+String receivedJson = "RECEIVED JSON";
+String lastDataReceivedTime = "";
+String wifiStatus = "";
+
+long systemUptime, uptimesec;
+long distance, cdistance, mdistance, lastDistance;;
+int tankPercentage, ctankPercentage, mtankPercentage;
+float availableLitres, cavailableLitres, mavailableLitres, waterlevelAt, cwaterlevelAt, mwaterlevelAt; 
+float consumedLitres, cconsumedLitres, mconsumedLitres;
+int isSlow, isShigh, isClow, isChigh, isMlow, isMhigh;
+int isSlowNotify, isShighNotify, isClowNotify, isChighNotify, isMlowNotify, isMhighNotify;
 
 void setup() {
-  // put your setup code here, to run once:
-  isSlow = false;
-  isShigh = false;
-  isClow = false;
-  isChigh = false;
-  isMlow = false;
-  isMhigh = false;
-  
-  serialPort.begin(115200);
+  setupConfiguration = "";
+  setupConfiguration = "Blynk v" BLYNK_VERSION ": Device started";
+
   Serial.begin(115200);
-  Serial.println("----------------SETUP INITIATED--------------------------");
-  pinMode(strigger, OUTPUT);
-  pinMode(secho, INPUT);
-  pinMode(ctrigger, OUTPUT);
-  pinMode(cecho, INPUT);
-  pinMode(mtrigger, OUTPUT);
-  pinMode(mecho, INPUT);
-  ssensorrestorecalibration = scalibrationvalue;
-  csensorrestorecalibration = ccalibrationvalue;
-  msensorrestorecalibration = mcalibrationvalue;
-  
-  Serial.println("----------------SETUP COMPLETED--------------------------");
+  delay(10);
+  serialPort.begin(115200);
+  delay(10);
+
+  Serial.print("----------- Setup... ----------");
+ 
+  setupWifi();
+  setupTimers();
+    
+  Serial.println("Setting Blynk & ThingSpeak..");
+  Blynk.begin(auth, ssid, pass);
+  ThingSpeak.begin(client);
+
+  setupDateTime();
+  Serial.print("----------- END Setup... ----------");
 }
+
+void setupWifi() {
+  WiFi.begin(ssid, pass);             // Connect to the network
+  Serial.print("Connecting to ");
+  setupConfiguration = setupConfiguration + "Connecting to " + ssid;
+  terminal.print(ssid);
   
-void loop() {
-  // put your main code here, to run repeatedly:
-  long uptimemls = millis();
-  long uptimesec = uptimemls/1000;
+  Serial.print(ssid); Serial.println(" ...");
+
+  int i = 0;
+  Serial.println("Checking Wifi Status..");
+  Serial.println(WiFi.status());
+
+//WL_NO_SHIELD = 255,
+//WL_IDLE_STATUS = 0,
+//WL_NO_SSID_AVAIL = 1
+//WL_SCAN_COMPLETED = 2
+//WL_CONNECTED = 3
+//WL_CONNECT_FAILED = 4
+//WL_CONNECTION_LOST = 5
+//WL_DISCONNECTED = 6
+
+  while (WiFi.status() != WL_CONNECTED) { // Wait for the Wi-Fi to connect
+    delay(1000);
+    Serial.print(++i); Serial.print(' ');
+  }
+
+  Serial.println('\n');
+  Serial.println("Connection established!");  
+  Serial.print("IP address:\t");
+  Serial.println(WiFi.localIP());         // Send the IP address of the ESP8266 to the computer
+  setupConfiguration = setupConfiguration + "\n" + "Connection established!" + "IP address:\t" + WiFi.localIP().toString();
+}
+
+void setupDateTime() { 
+  if(DateTime.isTimeValid()) {
+    terminal.println("datetime is valid.. hence skipping..");
+	  terminal.println("Last Wifi Status.. " + wifiStatus);
+    terminal.flush();
+    return;
+  }
+    
+   // setup this after wifi connected 
+   // you can use custom timeZone,server and timeout 
+   DateTime.setTimeZone("+5.30"); 
+   DateTime.setServer("asia.pool.ntp.org"); 
+   //DateTime.begin(15 * 1000); 
+   DateTime.begin(); 
+   if (!DateTime.isTimeValid()) { 
+     terminal.println("Failed to get time from server."); 
+     terminal.flush();
+   }
+   
+//  DateTimeParts p = DateTime.getParts(); 
+//  Serial.printf("%04d/%02d/%02d %02d:%02d:%02d %ld %+05d\n", p.getYear(), 
+//                 p.getMonth(), p.getMonthDay(), p.getHours(), p.getMinutes(), 
+//                 p.getSeconds(), p.getTime(), p.getTimeZone()); 
+//   Serial.println("--------------------"); 
+   time_t t = DateTime.now(); 
+//   Serial.println(DateFormatter::format("%Y/%m/%d %H:%M:%S", t)); 
+//   Serial.println(DateFormatter::format("%x - %I:%M %p", t)); 
+   String dateTimenow = DateFormatter::format("%F %I:%M%p.", t);
+   Serial.println(dateTimenow); 
+   
+   terminal.println("Date Sync completed successfully!!" + dateTimenow); 
+   terminal.flush();
+ }
+
+void setupTimers() {
+  Serial.println("Resetting Timers..");         
+  
+  // Setup a function to be called every second
+  uploadBlynkTimer.setInterval(10000L, uploadtoBlynk); // 1 second
+  uploadThingSpeakTimer.setInterval(120000L, uploadToThingSpeak); // (120000 -- 2 minutes)
+  
+  notifyTimer.setInterval(900000L, notifyToApp); // 15 mins  
+  systemTimer.setInterval(900000L, setupDateTime); // 15 mins 
+}
+
+void extractSensorData() {  
   
   StaticJsonBuffer<1000> jsonBuffer;
-  JsonObject& root = jsonBuffer.createObject();
-  root["ArduinoUptime"] = uptimesec;
+  JsonObject& root = jsonBuffer.parseObject(serialPort);
+
+  long uptimemls = millis();
+  uptimesec = uptimemls/1000;
   
-  checkWaterLevelInCompressorTank(root);
-  checkWaterLevelInCementTank(root);
-  checkWaterLevelInMiniTank(root);
+//  Serial.println("Esp uptime ");
+//  Serial.println(uptimesec);
+
+//  Serial.println("Check port available..");
+//  Serial.println(serialPort.available());
+  int portStatus = serialPort.available();
+  serialPortStatus = portStatus;
   
-//  if(serialPort.available()>0)
-//  {
-    root.printTo(serialPort);
-//  }
-  delay(1000);
+  if (serialPort.available() > 0) {
+      //distance = -100;
+      distance = lastDistance;
+      Serial.println("Didnt Receive Data");
+      //Serial.println(portStatus);
+    //Serial.println(serialPort.available());
+  }
+  else {
+      time_t t = DateTime.now(); 
+      lastDataReceivedTime = DateFormatter::format("%F %I:%M%p.", t);
+      lastDistance = root["SensorDistance"];
+  }
+  
+  if(root == JsonObject::invalid()) 
+    return;
+
+//  Serial.println("JSON Received and Parsed");
+//  root.prettyPrintTo(Serial);
+  
+  receivedJson = "";
+  root.prettyPrintTo(receivedJson);
+  
+  systemUptime=root["ArduinoUptime"];
+  distance=root["SensorDistance"];
+  tankPercentage=root["TankLevelPercentage"];
+  availableLitres = root["AvailableLitres"];
+  consumedLitres = root["ConsumedLitres"];
+  waterlevelAt = root["SWaterlevelat"];
+
+  cdistance=root["CSensorDistance"];
+  ctankPercentage=root["CTankLevelPercentage"];
+  cavailableLitres = root["CAvailableLitres"];
+  cconsumedLitres = root["CConsumedLitres"];
+  cwaterlevelAt = root["CWaterlevelat"];
+
+  mdistance=root["MSensorDistance"];
+  mtankPercentage=root["MTankLevelPercentage"];
+  mavailableLitres = root["MAvailableLitres"];
+  mconsumedLitres = root["MConsumedLitres"];
+  mwaterlevelAt = root["MWaterlevelat"];
+  
+  isSlow = root["isSlow"];
+  isShigh = root["isShigh"];
+  isClow = root["isClow"];
+  isChigh = root["isChigh"];
+  isMhigh = root["isMhigh"];
+  isMlow = root["isMlow"];
+
+//  Serial.println(isSlow);
+//  Serial.println(isShigh);
+//  Serial.println(isClow);
+//  Serial.println(isChigh);
+  
+  //Serial.println("ArduinoUptime ");
+  //Serial.print(systemUptime);
+  //Serial.println("");
+  
+  //Serial.println("SensorDistance ");
+  //Serial.print(distance);
+  //Serial.println("");
+
+  //Serial.println("TankLevelPercentage ");
+  //Serial.print(tankPercentage);
+  //Serial.println("");
+
+  //Serial.println("AvailableLitres ");
+  //Serial.print(availableLitres);
+  //Serial.println("");
+
+  //Serial.println("ConsumedLitres ");
+  //Serial.print(consumedLitres);
+  //Serial.println("");
+  
+  //Serial.println("----------------------");
 }
 
-void checkWaterLevelInCompressorTank(JsonObject& root) {
-  long duration, distance;
-  int tanklevelpercentage = 0;
-
-  digitalWrite(strigger, LOW);  
-  delayMicroseconds(2); 
-  
-  digitalWrite(strigger, HIGH);
-  delayMicroseconds(10); 
-  
-  digitalWrite(strigger, LOW);
-  duration = pulseIn(secho, HIGH);
-  distance = (duration/2) / 29.1;
-
-  //Simulate..
-  //distance = 135;
-  
-  //Serial.println("Compressor duration");
-  //Serial.println(duration);
-
-//  Serial.println("Compressor distance");
-//  Serial.println(distance);
-  
-  //Blynk.virtualWrite(V1, distance);
-  root["SensorDistance"] = distance;
-  
-  scalibrationvalue = ssensorrestorecalibration;
-  if(distance > (stankheight + scalibrationvalue)) {
-    //Serial.println(distance);
-    distance = stankheight;
-    scalibrationvalue = 0;
-  } 
-  float availablelitres = measureWater(distance, scalibrationvalue, stankheight, stankwidth, stanklength);
-  float consumedlitres = consumedWater(distance, scalibrationvalue, stankheight, stankwidth, stanklength);
-
-  //Blynk.virtualWrite(V3, availablelitres);
-  root["AvailableLitres"] = availablelitres;
-
-  //Blynk.virtualWrite(V2, consumedlitres);
-  root["ConsumedLitres"] = consumedlitres;
-
-  int waterlevelat = 0;
-  if(distance > 0) {
-    waterlevelat = stankheight + scalibrationvalue - distance;
-//    Serial.println(scalibrationvalue);
-//    Serial.println("calibration value printed above");
+void notifyToApp() {
+  if(isSlowNotify == 0 && isSlow == 1) {
+     Blynk.notify("Compressor Tank is Empty!! Please switch On Motor.");
+    isSlowNotify = 1;
   }
-//  Serial.println("Waterlevelat");
-//  Serial.println(waterlevelat);
-  
-  tanklevelpercentage = waterlevelat / stankheight * 100;
+  else if(isSlow == 0) {
+    isSlowNotify = 0;
+  }
 
-  if(tanklevelpercentage < 0)  {
-    tanklevelpercentage = 0;
+  if(isShighNotify == 0 && isShigh == 1) {
+     Blynk.notify("Compressor Tank is Full!! Please switch Off Motor.");
+    isShighNotify = 1;
   }
-  
-  if(tanklevelpercentage < 30 && tanklevelpercentage > 10) {
-    isSlow = 1;
+  else if(isShigh == 0) {
+    isShighNotify = 0;
   }
-  else if(tanklevelpercentage > 30) {
-    isSlow = 0;
+
+  if(isClowNotify == 0 && isClow == 1) {
+     Blynk.notify("Cement Tank is Empty!! Please switch On Motor.");
+    isClowNotify = 1;
   }
-  
-  if(tanklevelpercentage > 95) {
-    isShigh = 1;
+  else if(isClow == 0) {
+    isClowNotify = 0;
   }
-  else if(tanklevelpercentage < 95 && tanklevelpercentage > 10) {
-    isShigh = 0;
+
+  if(isChighNotify == 0 && isChigh == 1) {
+     Blynk.notify("Cement Tank is Full!! Please switch Off Motor.");
+    isChighNotify = 1;
   }
-  
-  root["isSlow"] = isSlow;
-  root["isShigh"] = isShigh;
-  
-  //Blynk.virtualWrite(V0, tanklevelpercentage);
-  root["TankLevelPercentage"] = tanklevelpercentage;
-  
-  root["SWaterlevelat"] = waterlevelat/30.48;
-  //Blynk.virtualWrite(V5, uptimesec);
+  else if(isChigh == 0) {
+    isChighNotify = 0;
+  }
+
+  if(isMlowNotify == 0 && isMlow == 1) {
+     Blynk.notify("Mini Cement Tank is Empty!! Please switch On Motor.");
+    isMlowNotify = 1;
+  }
+  else if(isMlow == 0) {
+    isMlowNotify = 0;
+  }
+
+  if(isMhighNotify == 0 && isMhigh == 1) {
+     Blynk.notify("Mini Cement Tank is Full!! Please switch Off Motor.");
+    isMhighNotify = 1;
+  }
+  else if(isMhigh == 0) {
+    isMhighNotify = 0;
+  }
 }
 
-  void checkWaterLevelInCementTank(JsonObject& root) {
-  long duration, distance;
-  int tanklevelpercentage = 0;
-
-  digitalWrite(ctrigger, LOW);  
-  delayMicroseconds(2); 
+void uploadtoBlynk() {  
+  Blynk.virtualWrite(V0, tankPercentage);
+  Blynk.virtualWrite(V1, distance);
+  Blynk.virtualWrite(V2, consumedLitres);
   
-  digitalWrite(ctrigger, HIGH);
-  delayMicroseconds(10); 
+  Blynk.virtualWrite(V3, availableLitres);
+  Blynk.virtualWrite(V4, waterlevelAt);
   
-  digitalWrite(ctrigger, LOW);
-  duration = pulseIn(cecho, HIGH);
-  distance = (duration/2) / 29.1;
+  Blynk.virtualWrite(V5, systemUptime);  
+  Blynk.virtualWrite(V6, uptimesec);
 
-  //simulator.
-  //distance = 80;
+  Blynk.virtualWrite(V10, ctankPercentage);
+  Blynk.virtualWrite(V11, cdistance);
+  Blynk.virtualWrite(V12, cconsumedLitres);
   
-//  Serial.println("cement duration");
-//  Serial.println(duration);
-//
-//  Serial.println("cement distance");
-//  Serial.println(distance);
+  Blynk.virtualWrite(V13, cavailableLitres);
+  Blynk.virtualWrite(V14, cwaterlevelAt);
+
+  Blynk.virtualWrite(V15, mtankPercentage);
+  Blynk.virtualWrite(V16, mdistance);
+  Blynk.virtualWrite(V17, mconsumedLitres);
   
-  //Blynk.virtualWrite(V1, distance);
-  root["CSensorDistance"] = distance;
-  
-  ccalibrationvalue = csensorrestorecalibration;
-  if(distance > (ctankheight + ccalibrationvalue)) {
-//    Serial.println(distance);
-    distance = ctankheight;
-    ccalibrationvalue = 0;
-  } 
-  float availablelitres = measureWater(distance, ccalibrationvalue, ctankheight, ctankwidth, ctanklength);
-  float consumedlitres = consumedWater(distance, ccalibrationvalue, ctankheight, ctankwidth, ctanklength);
-
-  //Blynk.virtualWrite(V13, availablelitres);
-  root["CAvailableLitres"] = availablelitres;
-
-  //Blynk.virtualWrite(V12, consumedlitres);
-  root["CConsumedLitres"] = consumedlitres;
-
-  int waterlevelat = 0;
-  if(distance > 0) {
-    waterlevelat = ctankheight + ccalibrationvalue - distance;
-//    Serial.println(ccalibrationvalue);
-//    Serial.println("calibration value printed above");
-  }
-//  Serial.println("CWaterlevelat");
-//  Serial.println(waterlevelat);
-  tanklevelpercentage = waterlevelat / ctankheight * 100;
-//  Serial.println("cement");
-//  Serial.println(ctankheight);
-//  Serial.println(waterlevelat);
-//  Serial.println(tanklevelpercentage);
-//  if(tanklevelpercentage > 100)  {
-//    tanklevelpercentage = 100;
-//  }
-  if(tanklevelpercentage < 0)  {
-    tanklevelpercentage = 0;
-  }
+  Blynk.virtualWrite(V18, mavailableLitres);
+  Blynk.virtualWrite(V19, mwaterlevelAt);
     
-  if(tanklevelpercentage < 30 && tanklevelpercentage > 10) {
-    isClow = 1;
-  }
-  else if(tanklevelpercentage > 30) {
-    isClow = 0;
-  }
-  
-  if(tanklevelpercentage > 95) {
-    isChigh = 1;
-  }
-  else if(tanklevelpercentage < 95 && tanklevelpercentage > 10) {
-    isChigh = 0;
-  }
-  
-  //Blynk.virtualWrite(V0, tanklevelpercentage);
-  root["isClow"] = isClow;
-  root["isChigh"] = isChigh;
-    
-  root["CTankLevelPercentage"] = tanklevelpercentage;
-  root["CWaterlevelat"] = waterlevelat/30.48;
-  //Blynk.virtualWrite(V5, uptimesec);
+  //Bridge Transmit
+  bridge.virtualWrite(V0, tankPercentage);
+  bridge.virtualWrite(V10, ctankPercentage);
 }
 
-void checkWaterLevelInMiniTank(JsonObject& root) {
-  long duration, distance;
-  int tanklevelpercentage = 0;
+void uploadToThingSpeak() {
+  wifiStatus = WiFi.status();
+  
+  //Upload to Thinkspeak
+  ThingSpeak.setField(1, tankPercentage);
+  ThingSpeak.setField(2, consumedLitres);
+  ThingSpeak.setField(3, availableLitres);
 
-  digitalWrite(mtrigger, LOW);  
-  delayMicroseconds(2); 
-  
-  digitalWrite(mtrigger, HIGH);
-  delayMicroseconds(10); 
-  
-  digitalWrite(mtrigger, LOW);
-  duration = pulseIn(mecho, HIGH);
-  distance = (duration/2) / 29.1;
+  ThingSpeak.setField(4, ctankPercentage);
+  ThingSpeak.setField(5, cconsumedLitres);
+  ThingSpeak.setField(6, cavailableLitres);
 
-  //simulator.
-  //distance = 80;
-  
-  Serial.println("Mini duration");
-  Serial.println(duration);
+  thingspeakStatus = "";
+  int httpCode = ThingSpeak.writeFields(myChannelNumber, myWriteAPIKey);
+  if (httpCode == 200) {
+    Serial.println("Channel write successful.");
+    thingspeakStatus = "Channel write successful.";
+  }
+  else {
+    Serial.println("Problem writing to channel. HTTP error code " + String(httpCode));
+    thingspeakStatus = "Problem writing to channel. HTTP error code " + String(httpCode);
+  }
 
-  Serial.println("Mini distance");
-  Serial.println(distance);
+  time_t t = DateTime.now(); 
+  String dateTimenow = DateFormatter::format("%F %I:%M%p.", t);
   
-  //Blynk.virtualWrite(V1, distance);
-  root["MSensorDistance"] = distance;
-  
-  mcalibrationvalue = msensorrestorecalibration;
-  if(distance > (mtankheight + mcalibrationvalue)) {
-//    Serial.println(distance);
-    distance = mtankheight;
-    mcalibrationvalue = 0;
-  } 
-  float availablelitres = measureWater(distance, mcalibrationvalue, mtankheight, mtankwidth, mtanklength);
-  float consumedlitres = consumedWater(distance, mcalibrationvalue, mtankheight, mtankwidth, mtanklength);
-
-  //Blynk.virtualWrite(V13, availablelitres);
-  root["MAvailableLitres"] = availablelitres;
-
-  //Blynk.virtualWrite(V12, consumedlitres);
-  root["MConsumedLitres"] = consumedlitres;
-
-  int waterlevelat = 0;
-  if(distance > 0) {
-    waterlevelat = mtankheight + mcalibrationvalue - distance;
-//    Serial.println(mcalibrationvalue);
-//    Serial.println("calibration value printed above");
-  }
-//  Serial.println("mWaterlevelat");
-//  Serial.println(waterlevelat);
-  tanklevelpercentage = waterlevelat / mtankheight * 100;
-//  Serial.println("cement");
-//  Serial.println(ctankheight);
-//  Serial.println(waterlevelat);
-//  Serial.println(tanklevelpercentage);
-//  if(tanklevelpercentage > 100)  {
-//    tanklevelpercentage = 100;
-//  }
-  if(tanklevelpercentage < 0)  {
-    tanklevelpercentage = 0;
-  }
-    
-  if(tanklevelpercentage < 30 && tanklevelpercentage > 10) {
-    isMlow = 1;
-  }
-  else if(tanklevelpercentage > 30) {
-    isMlow = 0;
-  }
-  
-  if(tanklevelpercentage > 95) {
-    isMhigh = 1;
-  }
-  else if(tanklevelpercentage < 95 && tanklevelpercentage > 10) {
-    isMhigh = 0;
-  }
-  
-  //Blynk.virtualWrite(V0, tanklevelpercentage);
-  root["isMlow"] = isMlow;
-  root["isMhigh"] = isMhigh;
-    
-  root["MTankLevelPercentage"] = tanklevelpercentage;
-  root["MWaterlevelat"] = waterlevelat/30.48;
-  //Blynk.virtualWrite(V5, uptimesec);
+  thingspeakStatus = thingspeakStatus + dateTimenow;
+  terminal.println("Last Wifi Status.. " + wifiStatus);
+  terminal.println("Thingspeak Upload Status.. " + thingspeakStatus);
+  terminal.flush();
 }
 
-float measureWater(int distance, long calibrationvalue, float tankheight, float tankwidth, float tanklength) {
-  float availablelitres = 0;
-
-  int waterlevelat=0;
-  if(distance > 0) {
-    waterlevelat = tankheight + calibrationvalue - distance;
-  }
-  
-  float availablevolume = waterlevelat * tanklength * tankwidth;
-  availablelitres = availablevolume / 1000;
-  
-  if(availablelitres < 0){
-    availablelitres = 0;
-  }
-  return availablelitres;
+BLYNK_CONNECTED() {
+  bridge.setAuthToken("ODbXgkyA-fZohqppkwa0qm8QusGnDXCa");
+  Blynk.email("{DEVICE_NAME} Successfully Connected", "{DEVICE_NAME} Connected");
+  Blynk.notify("{DEVICE_NAME} Successfully Connected");
 }
 
-float consumedWater(int distance, long calibrationvalue, float tankheight, float tankwidth, float tanklength) {
-  float consumedlitres = 0;
-  float consumedvolume = (distance - calibrationvalue) * tanklength * tankwidth;
-  consumedlitres = consumedvolume / 1000;
-
-  if(consumedlitres < 0){
-    consumedlitres = 0;
+// You can send commands from Terminal to your hardware. Just use
+// the same Virtual Pin as your Terminal Widget
+BLYNK_WRITE(V50)
+{  
+  // if you type "Marco" into Terminal Widget - it will respond: "Polo:"
+  if (String("help") == param.asStr()) {
+    terminal.println("You said: 'help'") ;
+    terminal.println("I said: 'printing all help commands'") ;
+    terminal.println("lss-serial port status, lrd-lastreceivedjson, lst-lastreceivedtime, crd-clear, sdata-setupconfiguration, lws-lastwifistatus, ssys-setupdatetime, sys-systemtime") ;
+  } else if (String("lss") == param.asStr()) {
+    terminal.println(serialPortStatus);
+    terminal.println("---END of MSG--");  
+  } else if ( String("lrd") == param.asStr()) {
+    terminal.println(receivedJson); 
+    terminal.println("---END of MSG--");  
+  } else if (String("lst") == param.asStr()) {
+    terminal.println(lastDataReceivedTime);
+    terminal.println("---END of MSG--");  
+  } else if (String("crd") == param.asStr()) {
+    receivedJson = "";
+    terminal.clear();
+  } else if (String("sdata") == param.asStr()) {
+    terminal.println(setupConfiguration);
+    terminal.println("---END of MSG--"); 
+  } else if (String("lts") == param.asStr()) {
+    terminal.println(thingspeakStatus);
+    terminal.println("---END of MSG--"); 
+  } else if (String("lws") == param.asStr()) {
+    terminal.println("last wifi status" + wifiStatus);
+    terminal.println("---END of MSG--"); 
+  } else if (String("ssys") == param.asStr()) {
+    setupDateTime();
+  } else if (String("sys") == param.asStr()) {
+    time_t t = DateTime.now(); 
+    String dateTimenow = DateFormatter::format("%F %I:%M%p.", t);
+	
+    terminal.println("System Time.." + dateTimenow);
+    terminal.println("---END of MSG--");
   }
-  return consumedlitres;
+  else {
+    // Send it back
+    terminal.print("You said:");
+    terminal.write(param.getBuffer(), param.getLength());
+    terminal.println();
+    terminal.clear();
+  }
+
+  // Ensure everything is sent
+  terminal.flush();
+}
+
+void loop() {
+  Blynk.run();
+  
+  //Initialize Timers.
+  uploadBlynkTimer.run();
+  uploadThingSpeakTimer.run();
+  systemTimer.run();
+  notifyTimer.run();
+
+  extractSensorData();
 }
