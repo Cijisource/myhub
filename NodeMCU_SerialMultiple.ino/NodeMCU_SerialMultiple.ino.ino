@@ -20,7 +20,7 @@ WidgetTerminal terminal(V50);
 unsigned long myChannelNumber = 1184761;
 const char * myWriteAPIKey = "Z85MB42QWY3T4VGG";
 
-char auth[] = "DYLNiU66yHBL8I09OrJ0g5X4r_AbS66J";
+char auth[] = "3S2mjm0uyjmgkmZ_WXi3L3TgFEWz6b1E";
 
 // Your WiFi credentials.
 // Set password to "" for open networks.
@@ -113,7 +113,7 @@ void setupDateTime() {
     
    // setup this after wifi connected 
    // you can use custom timeZone,server and timeout 
-   DateTime.setTimeZone("+5.30"); 
+   DateTime.setTimeZone(+5.30); 
    DateTime.setServer("asia.pool.ntp.org"); 
    //DateTime.begin(15 * 1000); 
    DateTime.begin(); 
