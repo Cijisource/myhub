@@ -255,18 +255,18 @@ void checkWaterLevelInMiniTank(JsonObject& root) {
   
   digitalWrite(mtrigger, LOW);
   duration = pulseIn(mecho, HIGH);
-  distance = (duration/2) / 29.1;
 
   //simulator.
-  //distance = 80;
-  
+  duration = 500;
+  distance = (duration/2) / 29.1;
+ 
   Serial.println("Mini duration");
   Serial.println(duration);
 
   Serial.println("Mini distance");
   Serial.println(distance);
   
-  //Blynk.virtualWrite(V1, distance);
+  //Blynk.virtualWrite(V1, distance);DU
   root["MSensorDistance"] = distance;
   
   mcalibrationvalue = msensorrestorecalibration;
