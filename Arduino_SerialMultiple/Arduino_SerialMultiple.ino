@@ -176,11 +176,11 @@ void checkWaterLevelInCompressorTank(JsonObject& root) {
   //simulator.
   //distance = 80;
   
-//  Serial.println("cement duration");
-//  Serial.println(duration);
+  Serial.println("cement duration");
+  Serial.println(duration);
 //
-//  Serial.println("cement distance");
-//  Serial.println(distance);
+  Serial.println("cement distance");
+  Serial.println(distance);
   
   //Blynk.virtualWrite(V1, distance);
   root["CSensorDistance"] = distance;
