@@ -20,7 +20,7 @@ WidgetTerminal terminal(V50);
 unsigned long myChannelNumber = 1184761;
 const char * myWriteAPIKey = "Z85MB42QWY3T4VGG";
 
-char auth[] = "DYLNiU66yHBL8I09OrJ0g5X4r_AbS66J";
+char auth[] = "3S2mjm0uyjmgkmZ_WXi3L3TgFEWz6b1E";
 
 // Your WiFi credentials.
 // Set password to "" for open networks.
@@ -41,12 +41,12 @@ String lastDataReceivedTime = "";
 String wifiStatus = "";
 
 long systemUptime, uptimesec;
-long distance, cdistance, lastDistance;;
-int tankPercentage, ctankPercentage;
-float availableLitres, cavailableLitres, waterlevelAt, cwaterlevelAt; 
-float consumedLitres, cconsumedLitres;
-int isSlow, isShigh, isClow, isChigh;
-int isSlowNotify, isShighNotify, isClowNotify, isChighNotify;
+long distance, cdistance, mdistance, lastDistance;;
+int tankPercentage, ctankPercentage, mtankPercentage;
+float availableLitres, cavailableLitres, mavailableLitres, waterlevelAt, cwaterlevelAt, mwaterlevelAt; 
+float consumedLitres, cconsumedLitres, mconsumedLitres;
+int isSlow, isShigh, isClow, isChigh, isMlow, isMhigh;
+int isSlowNotify, isShighNotify, isClowNotify, isChighNotify, isMlowNotify, isMhighNotify;
 
 void setup() {
   setupConfiguration = "";
@@ -198,11 +198,19 @@ void extractSensorData() {
   cavailableLitres = root["CAvailableLitres"];
   cconsumedLitres = root["CConsumedLitres"];
   cwaterlevelAt = root["CWaterlevelat"];
+
+  mdistance=root["MSensorDistance"];
+  mtankPercentage=root["MTankLevelPercentage"];
+  mavailableLitres = root["MAvailableLitres"];
+  mconsumedLitres = root["MConsumedLitres"];
+  mwaterlevelAt = root["MWaterlevelat"];
   
   isSlow = root["isSlow"];
   isShigh = root["isShigh"];
   isClow = root["isClow"];
   isChigh = root["isChigh"];
+  isMhigh = root["isMhigh"];
+  isMlow = root["isMlow"];
 
 //  Serial.println(isSlow);
 //  Serial.println(isShigh);
@@ -264,6 +272,22 @@ void notifyToApp() {
   else if(isChigh == 0) {
     isChighNotify = 0;
   }
+
+  if(isMlowNotify == 0 && isMlow == 1) {
+     Blynk.notify("Mini Cement Tank is Empty!! Please switch On Motor.");
+    isMlowNotify = 1;
+  }
+  else if(isMlow == 0) {
+    isMlowNotify = 0;
+  }
+
+  if(isMhighNotify == 0 && isMhigh == 1) {
+     Blynk.notify("Mini Cement Tank is Full!! Please switch Off Motor.");
+    isMhighNotify = 1;
+  }
+  else if(isMhigh == 0) {
+    isMhighNotify = 0;
+  }
 }
 
 void uploadtoBlynk() {  
@@ -283,6 +307,13 @@ void uploadtoBlynk() {
   
   Blynk.virtualWrite(V13, cavailableLitres);
   Blynk.virtualWrite(V14, cwaterlevelAt);
+
+  Blynk.virtualWrite(V15, mtankPercentage);
+  Blynk.virtualWrite(V16, mdistance);
+  Blynk.virtualWrite(V17, mconsumedLitres);
+  
+  Blynk.virtualWrite(V18, mavailableLitres);
+  Blynk.virtualWrite(V19, mwaterlevelAt);
     
   //Bridge Transmit
   bridge.virtualWrite(V0, tankPercentage);
@@ -332,9 +363,10 @@ BLYNK_CONNECTED() {
 BLYNK_WRITE(V50)
 {  
   // if you type "Marco" into Terminal Widget - it will respond: "Polo:"
-  if (String("Marco") == param.asStr()) {
-    terminal.println("You said: 'Marco'") ;
-    terminal.println("I said: 'Polo'") ;
+  if (String("help") == param.asStr()) {
+    terminal.println("You said: 'help'") ;
+    terminal.println("I said: 'printing all help commands'") ;
+    terminal.println("lss-serial port status, lrd-lastreceivedjson, lst-lastreceivedtime, crd-clear, sdata-setupconfiguration, lws-lastwifistatus, ssys-setupdatetime, sys-systemtime") ;
   } else if (String("lss") == param.asStr()) {
     terminal.println(serialPortStatus);
     terminal.println("---END of MSG--");  

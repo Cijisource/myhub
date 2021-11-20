@@ -2,6 +2,8 @@
 #define secho 6
 #define ctrigger 5
 #define cecho 4
+#define mtrigger 3
+#define mecho 2
 
 #include <SoftwareSerial.h>
 #include <ArduinoJson.h>
@@ -18,10 +20,19 @@ long ccalibrationvalue = 5;
 long csensorrestorecalibration;
 float ctankwidth = 132.08; //5 feet
 float ctanklength = 304.8; //4.5 feet
+
+float mtankheight = 74; //4 feet
+long mcalibrationvalue = 5;
+long msensorrestorecalibration;
+float mtankwidth = 59; //5 feet
+float mtanklength = 132; //4.5 feet
+
 int isSlow;
 int isShigh;
 int isClow;
 int isChigh;
+int isMlow;
+int isMhigh;
 
 void setup() {
   // put your setup code here, to run once:
@@ -29,6 +40,8 @@ void setup() {
   isShigh = false;
   isClow = false;
   isChigh = false;
+  isMlow = false;
+  isMhigh = false;
   
   serialPort.begin(115200);
   Serial.begin(115200);
@@ -37,8 +50,11 @@ void setup() {
   pinMode(secho, INPUT);
   pinMode(ctrigger, OUTPUT);
   pinMode(cecho, INPUT);
+  pinMode(mtrigger, OUTPUT);
+  pinMode(mecho, INPUT);
   ssensorrestorecalibration = scalibrationvalue;
   csensorrestorecalibration = ccalibrationvalue;
+  msensorrestorecalibration = mcalibrationvalue;
   
   Serial.println("----------------SETUP COMPLETED--------------------------");
 }
@@ -54,6 +70,7 @@ void loop() {
   
   checkWaterLevelInCompressorTank(root);
   checkWaterLevelInCementTank(root);
+  checkWaterLevelInMiniTank(root);
   
 //  if(serialPort.available()>0)
 //  {
@@ -161,7 +178,7 @@ void checkWaterLevelInCompressorTank(JsonObject& root) {
   
   Serial.println("cement duration");
   Serial.println(duration);
-
+//
   Serial.println("cement distance");
   Serial.println(distance);
   
@@ -223,6 +240,90 @@ void checkWaterLevelInCompressorTank(JsonObject& root) {
     
   root["CTankLevelPercentage"] = tanklevelpercentage;
   root["CWaterlevelat"] = waterlevelat/30.48;
+  //Blynk.virtualWrite(V5, uptimesec);
+}
+
+void checkWaterLevelInMiniTank(JsonObject& root) {
+  long duration, distance;
+  int tanklevelpercentage = 0;
+
+  digitalWrite(mtrigger, LOW);  
+  delayMicroseconds(2); 
+  
+  digitalWrite(mtrigger, HIGH);
+  delayMicroseconds(10); 
+  
+  digitalWrite(mtrigger, LOW);
+  duration = pulseIn(mecho, HIGH);
+
+  //simulator.
+  duration = 500;
+  distance = (duration/2) / 29.1;
+ 
+  Serial.println("Mini duration");
+  Serial.println(duration);
+
+  Serial.println("Mini distance");
+  Serial.println(distance);
+  
+  //Blynk.virtualWrite(V1, distance);DU
+  root["MSensorDistance"] = distance;
+  
+  mcalibrationvalue = msensorrestorecalibration;
+  if(distance > (mtankheight + mcalibrationvalue)) {
+//    Serial.println(distance);
+    distance = mtankheight;
+    mcalibrationvalue = 0;
+  } 
+  float availablelitres = measureWater(distance, mcalibrationvalue, mtankheight, mtankwidth, mtanklength);
+  float consumedlitres = consumedWater(distance, mcalibrationvalue, mtankheight, mtankwidth, mtanklength);
+
+  //Blynk.virtualWrite(V13, availablelitres);
+  root["MAvailableLitres"] = availablelitres;
+
+  //Blynk.virtualWrite(V12, consumedlitres);
+  root["MConsumedLitres"] = consumedlitres;
+
+  int waterlevelat = 0;
+  if(distance > 0) {
+    waterlevelat = mtankheight + mcalibrationvalue - distance;
+//    Serial.println(mcalibrationvalue);
+//    Serial.println("calibration value printed above");
+  }
+//  Serial.println("mWaterlevelat");
+//  Serial.println(waterlevelat);
+  tanklevelpercentage = waterlevelat / mtankheight * 100;
+//  Serial.println("cement");
+//  Serial.println(ctankheight);
+//  Serial.println(waterlevelat);
+//  Serial.println(tanklevelpercentage);
+//  if(tanklevelpercentage > 100)  {
+//    tanklevelpercentage = 100;
+//  }
+  if(tanklevelpercentage < 0)  {
+    tanklevelpercentage = 0;
+  }
+    
+  if(tanklevelpercentage < 30 && tanklevelpercentage > 10) {
+    isMlow = 1;
+  }
+  else if(tanklevelpercentage > 30) {
+    isMlow = 0;
+  }
+  
+  if(tanklevelpercentage > 95) {
+    isMhigh = 1;
+  }
+  else if(tanklevelpercentage < 95 && tanklevelpercentage > 10) {
+    isMhigh = 0;
+  }
+  
+  //Blynk.virtualWrite(V0, tanklevelpercentage);
+  root["isMlow"] = isMlow;
+  root["isMhigh"] = isMhigh;
+    
+  root["MTankLevelPercentage"] = tanklevelpercentage;
+  root["MWaterlevelat"] = waterlevelat/30.48;
   //Blynk.virtualWrite(V5, uptimesec);
 }
 
