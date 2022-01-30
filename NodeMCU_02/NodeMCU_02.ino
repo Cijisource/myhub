@@ -23,8 +23,8 @@ char auth[] = "ODbXgkyA-fZohqppkwa0qm8QusGnDXCa";
 
 // Your WiFi credentials.
 // Set password to "" for open networks.
-// char ssid[] = "Cijaiz_Home";
-// char pass[] = "M00n5050";
+//char ssid[] = "MOJITO";
+//char pass[] = "cijaiz@123";
 //char ssid[] = "Galaxy A719DBD";
 //char pass[] = "mygalaxya71";
 
