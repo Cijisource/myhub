@@ -1,12 +1,20 @@
-#include <SoftwareSerial.h>
+// Fill-in information from your Blynk Template here
+#define BLYNK_TEMPLATE_ID "TMPL0tRLYzze"
+#define BLYNK_DEVICE_NAME "Sintex Tank Monitor"
+#define BLYNK_FIRMWARE_VERSION        "0.1.1"
+#define BLYNK_PRINT Serial 
 
+#define APP_DEBUG
+
+#include "BlynkEdgent.h"
+#include <NTPClient.h>
+#include <ESP8266WiFi.h>
+#include <WiFiUdp.h>
 #include <ArduinoJson.h>
-#include "ESPDateTime.h"
+#include <SoftwareSerial.h>
+#include "ThingSpeak.h"
 
 #define BLYNK_PRINT Serial  
-#include <ESP8266WiFi.h>
-#include <BlynkSimpleEsp8266.h>
-#include "ThingSpeak.h"
 
 SoftwareSerial serialPort(D1,D0);
 
@@ -15,6 +23,9 @@ BlynkTimer uploadThingSpeakTimer;
 BlynkTimer notifyTimer;
 BlynkTimer systemTimer;
 BlynkTimer wifiChecker;
+
+WiFiUDP ntpUDP;
+NTPClient timeClient(ntpUDP, "pool.ntp.org");
 
 unsigned long myChannelNumber = 1184761;
 const char * myWriteAPIKey = "Z85MB42QWY3T4VGG";
@@ -44,6 +55,13 @@ String receivedJson = "RECEIVED JSON";
 String lastDataReceivedTime = "";
 String wifiStatus = "";
 
+//Week Days
+String weekDays[7]={"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
+
+//Month names
+String months[12]={"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"};
+
+String currentDate;
 long systemUptime, uptimesec;
 long distance, cdistance;
 
@@ -60,9 +78,11 @@ int isSlow, isShigh;
 int isSlowNotify, isShighNotify;
 
 void setup() {
+  BlynkEdgent.begin();
   setupConfiguration = "";
   setupConfiguration = "Blynk v" BLYNK_VERSION ": Device started";
-  
+
+  Serial.begin(9600);
   Serial.begin(115200);
   delay(10);
   serialPort.begin(115200);
@@ -74,14 +94,15 @@ void setup() {
   isCTankLowEmailSent = false;
   isCTankFullEmailSent = false;
 
-  setupWifi();
+  //setupWifi();
   setupTimers();
+
+  printDeviceBanner();
   
   Serial.println("Setting Blynk & ThingSpeak..");
-  Blynk.begin(auth, ssid, pass);
+  //Blynk.begin(auth, ssid, pass);
   ThingSpeak.begin(client);
-  setupDateTime();
-  
+  delay(200);  
   Serial.println("----------------SETUP COMPLETED--------------------------");
 }
 
@@ -145,40 +166,76 @@ void setupWifi() {
 }
 
 void setupDateTime() { 
-  if(DateTime.isTimeValid()) {
-    terminal.println("datetime is valid.. hence skipping..");
-    terminal.println("Last Wifi Status.. " + wifiStatus);
-    terminal.flush();
-    return;
-  }
-    
-   // setup this after wifi connected 
-   // you can use custom timeZone,server and timeout 
-   DateTime.setTimeZone(+5.30); 
-   DateTime.setServer("asia.pool.ntp.org"); 
-   //DateTime.begin(3000 * 1000); 
-   DateTime.begin(); 
-   if (!DateTime.isTimeValid()) { 
-     terminal.println("Failed to get time from server."); 
-     terminal.flush();
-   }
+  timeClient.begin();
+  timeClient.setTimeOffset(19764);
+  timeClient.update();
+
+  String formattedTime = timeClient.getFormattedTime();
+  time_t epochTime = timeClient.getEpochTime();
+  //Serial.print("Epoch Time: ");
+  //Serial.println(epochTime);
+
+  //Serial.print("Formatted Time: ");
+  //Serial.println(formattedTime);  
+
+  int currentHour = timeClient.getHours();
+  //Serial.print("Hour: ");
+  //Serial.println(currentHour);  
+
+  int currentMinute = timeClient.getMinutes();
+  //Serial.print("Minutes: ");
+  //Serial.println(currentMinute); 
    
-   //  DateTimeParts p = DateTime.getParts(); 
-//  Serial.printf("%04d/%02d/%02d %02d:%02d:%02d %ld %+05d\n", p.getYear(), 
-//                 p.getMonth(), p.getMonthDay(), p.getHours(), p.getMinutes(), 
-//                 p.getSeconds(), p.getTime(), p.getTimeZone()); 
-//   Serial.println("--------------------"); 
-   time_t t = DateTime.now(); 
-//   Serial.println(DateFormatter::format("%Y/%m/%d %H:%M:%S", t)); 
-//   Serial.println(DateFormatter::format("%x - %I:%M %p", t)); 
-   String dateTimenow = DateFormatter::format("%F %I:%M%p.", t);
-   Serial.println(dateTimenow); 
-   
-   terminal.println("Date Sync completed successfully!!" + dateTimenow); 
-   terminal.flush();
- }
- 
+  int currentSecond = timeClient.getSeconds();
+  //Serial.print("Seconds: ");
+  //Serial.println(currentSecond);  
+
+  String weekDay = weekDays[timeClient.getDay()];
+  //Serial.print("Week Day: ");
+  //Serial.println(weekDay);    
+
+  //Get a time structure
+  struct tm *ptm = gmtime ((time_t *)&epochTime); 
+
+  int monthDay = ptm->tm_mday;
+  //Serial.print("Month day: ");
+  //Serial.println(monthDay);
+
+  int currentMonth = ptm->tm_mon+1;
+  //Serial.print("Month: ");
+  //Serial.println(currentMonth);
+
+  String currentMonthName = months[currentMonth-1];
+  //Serial.print("Month name: ");
+  //Serial.println(currentMonthName);
+
+  int currentYear = ptm->tm_year+1900;
+  //Serial.print("Year: ");
+  //Serial.println(currentYear);
+
+  //Print complete date:
+  currentDate = String(currentYear) + "-" + String(currentMonth) + "-" + String(monthDay) + ":" + formattedTime;
+  //Serial.print("Current date: ");
+  //Serial.println(currentDate);
+
+  //Serial.println("");
+}
+
+void simulateSensor(){
+  tankPercentage = 1;
+  distance = 1;
+  consumedLitres = 1;
+  
+  availableLitres = 1;
+}
+
 void ExtractSensorData() {
+  Serial.print(".");
+  Serial.println(WiFi.status());
+
+  //TODO: Comment this piece in production code.
+  //simulateSensor();
+  
   StaticJsonBuffer<1000> jsonBuffer;
   JsonObject& root = jsonBuffer.parseObject(serialPort);
 
@@ -192,22 +249,16 @@ void ExtractSensorData() {
   serialPortStatus = portStatus;
   
   if (serialPort.available() > 0) {
-    //Serial.println("received Data");
+    Serial.println("received Data");
     distance = -100;
-//    Serial.println("Didnt Receive Data");
-  }  
-  else {
-      time_t t = DateTime.now(); 
-      lastDataReceivedTime = DateFormatter::format("%F %I:%M%p.", t);
-      wifiStatus = WiFi.status();
-  }
-  
+    //Serial.println("Didnt Receive Data");
+  }    
   if(root == JsonObject::invalid()) 
     return;
 
-//  Serial.println("JSON Received and Parsed");
-//  root.prettyPrintTo(Serial);
-//  Serial.println("");
+  //Serial.println("JSON Received and Parsed");
+  //root.prettyPrintTo(Serial);
+  //Serial.println("");
 
   receivedJson = "";
   root.prettyPrintTo(receivedJson);
@@ -350,10 +401,7 @@ void uploadToThingSpeak()
     thingspeakStatus = "Problem writing to channel. HTTP error code " + String(httpCode);
   }
 
-  time_t t = DateTime.now(); 
-  String dateTimenow = DateFormatter::format("%F %I:%M%p.", t);
-  
-  thingspeakStatus = thingspeakStatus + dateTimenow;
+  thingspeakStatus = thingspeakStatus + currentDate;
   terminal.println("Thingspeak Upload Status.. " + thingspeakStatus);
   terminal.println("Last WIFI Status.. " + wifiStatus);
   terminal.flush();
@@ -405,11 +453,8 @@ BLYNK_WRITE(V50)
     setupDateTime();
   } else if (String("swifi") == param.asStr()) {
     setupWifi();
-  } else if (String("sys") == param.asStr()) {
-    time_t t = DateTime.now(); 
-    String dateTimenow = DateFormatter::format("%F %I:%M%p.", t);
-  
-    terminal.println("System Time.." + dateTimenow);
+  } else if (String("sys") == param.asStr()) {  
+    terminal.println("System Time.." + currentDate);
     terminal.println("---END of MSG--");
   }
   else {
@@ -425,7 +470,7 @@ BLYNK_WRITE(V50)
 }
 
 void loop() {
-  Blynk.run();
+  BlynkEdgent.run();
 
   // Initiates SimpleTimer
   uploadBlynkTimer.run(); 
@@ -435,4 +480,5 @@ void loop() {
   wifiChecker.run();
 
   ExtractSensorData();
+  setupDateTime();
 }
