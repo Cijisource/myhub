@@ -1,7 +1,7 @@
 // Fill-in information from your Blynk Template here
 #define BLYNK_TEMPLATE_ID "TMPLe3Z3HbRn"
 #define BLYNK_DEVICE_NAME "Main Tank Monitor"
-#define BLYNK_FIRMWARE_VERSION        "0.1.0"
+#define BLYNK_FIRMWARE_VERSION        "0.1.2"
 #define BLYNK_PRINT Serial 
 
 #define APP_DEBUG
@@ -185,7 +185,7 @@ void setupTimers() {
   Serial.println("Resetting Timers..");         
   
   // Setup a function to be called every second
-  uploadBlynkTimer.setInterval(10L, uploadtoBlynk); // 1 second
+  uploadBlynkTimer.setInterval(10000L, uploadtoBlynk); // 1 second
   uploadThingSpeakTimer.setInterval(120000L, uploadToThingSpeak); // (120000 -- 2 minutes)
   
   notifyTimer.setInterval(900000L, notifyToApp); // 15 mins  
@@ -193,7 +193,7 @@ void setupTimers() {
 }
 
 void simulateSensor(){
-  tankPercentage = 23;
+  tankPercentage = 35;
   distance = 43;
   consumedLitres = 255;
   
@@ -218,7 +218,8 @@ void extractSensorData() {
   Serial.print(".");
   Serial.println(WiFi.status());
 
-  simulateSensor();
+  //TODO: Comment this piece in production code.
+  //simulateSensor();
   
   StaticJsonBuffer<1000> jsonBuffer;
   JsonObject& root = jsonBuffer.parseObject(serialPort);
@@ -453,7 +454,15 @@ BLYNK_WRITE(V50)
     terminal.println("---END of MSG--"); 
   } else if (String("ssys") == param.asStr()) {
     setupDateTime();
-  } 
+  } else if (String("sys") == param.asStr()) {  
+    terminal.println("System Time.." + currentDate);
+    terminal.println("---END of MSG--");
+  } else if (String("echck") == param.asStr()) {
+    terminal.println("Email Check Triggered.." + currentDate);
+    Blynk.email("Email Check", "This is the Test Email Check from Terminal Window");
+    Blynk.logEvent("email_sent"); 
+    terminal.println("Email Sent Successfully.." + currentDate);
+  }
   else {
     // Send it back
     terminal.print("You said:");
