@@ -1,10 +1,43 @@
-// Fill-in information from your Blynk Template here
+/*************************************************************
+  Blynk is a platform with iOS and Android apps to control
+  ESP32, Arduino, Raspberry Pi and the likes over the Internet.
+  You can easily build mobile and web interfaces for any
+  projects by simply dragging and dropping widgets.
+
+    Downloads, docs, tutorials: https://www.blynk.io
+    Sketch generator:           https://examples.blynk.cc
+    Blynk community:            https://community.blynk.cc
+    Follow us:                  https://www.fb.com/blynkapp
+                                https://twitter.com/blynk_app
+
+  Blynk library is licensed under MIT license
+ *************************************************************
+  Blynk.Edgent implements:
+  - Blynk.Inject - Dynamic WiFi credentials provisioning
+  - Blynk.Air    - Over The Air firmware updates
+  - Device state indication using a physical LED
+  - Credentials reset using a physical Button
+ *************************************************************/
+
+/* Fill in information from your Blynk Template here */
+/* Read more: https://bit.ly/BlynkInject */
+
 #define BLYNK_TEMPLATE_ID "TMPL0tRLYzze"
-#define BLYNK_DEVICE_NAME "Sintex Tank Monitor"
-#define BLYNK_FIRMWARE_VERSION        "0.1.1"
-#define BLYNK_PRINT Serial 
+#define BLYNK_TEMPLATE_NAME "Sintex Tank Monitor"
+#define BLYNK_FIRMWARE_VERSION        "0.1.0"
+
+#define BLYNK_PRINT Serial
+//#define BLYNK_DEBUG
 
 #define APP_DEBUG
+
+#define BLYNK_PRINT Serial 
+
+// Uncomment your board, or configure a custom board in Settings.h
+//#define USE_SPARKFUN_BLYNK_BOARD
+//#define USE_NODE_MCU_BOARD
+//#define USE_WITTY_CLOUD_BOARD
+//#define USE_WEMOS_D1_MINI
 
 #include "BlynkEdgent.h"
 #include <NTPClient.h>
@@ -14,9 +47,7 @@
 #include <SoftwareSerial.h>
 #include "ThingSpeak.h"
 
-#define BLYNK_PRINT Serial  
-
-SoftwareSerial serialPort(D1,D0);
+SoftwareSerial serialPort(D1,D0); //Rx and Tx
 
 BlynkTimer uploadBlynkTimer;
 BlynkTimer uploadThingSpeakTimer;
@@ -42,8 +73,11 @@ char auth[] = "ODbXgkyA-fZohqppkwa0qm8QusGnDXCa";
 //char ssid[] = "Cijaiz complex";
 //char pass[] = "9000150001";
 
-char ssid[] = "jeimahil";
-char pass[] = "mahilvis2017";
+//char ssid[] = "jeimahil";
+//char pass[] = "mahilvis2017";
+
+char ssid[] = "Cijaiz_Zone0";
+char pass[] = "Bb00m5050";
 
 WiFiClient client;
 WidgetTerminal terminal(V50);
@@ -77,7 +111,8 @@ bool isCTankFullEmailSent = true;
 int isSlow, isShigh;
 int isSlowNotify, isShighNotify;
 
-void setup() {
+void setup()
+{
   BlynkEdgent.begin();
   setupConfiguration = "";
   setupConfiguration = "Blynk v" BLYNK_VERSION ": Device started";
@@ -94,9 +129,7 @@ void setup() {
   isCTankLowEmailSent = false;
   isCTankFullEmailSent = false;
 
-  //setupWifi();
   setupTimers();
-
   printDeviceBanner();
   
   Serial.println("Setting Blynk & ThingSpeak..");
@@ -111,9 +144,9 @@ void setupTimers() {
   uploadBlynkTimer.setInterval(10000L, uploadtoBlynk); // 1 second
   uploadThingSpeakTimer.setInterval(140000L, uploadToThingSpeak); // (120000 -- 2 minutes & 20 seconds)
   
-  notifyTimer.setInterval(900000L, notifyToApp); // 15 mins  
+  //notifyTimer.setInterval(900000L, notifyToApp); // 15 mins  
   systemTimer.setInterval(900000L, setupDateTime); // 15 mins 
-  wifiChecker.setInterval(900000L, setupWifi); // 15 mins 
+  //wifiChecker.setInterval(900000L, setupWifi); // 15 mins 
 }
 
 void setupWifi() {
@@ -256,9 +289,9 @@ void ExtractSensorData() {
   if(root == JsonObject::invalid()) 
     return;
 
-  //Serial.println("JSON Received and Parsed");
-  //root.prettyPrintTo(Serial);
-  //Serial.println("");
+  Serial.println("JSON Received and Parsed");
+  root.prettyPrintTo(Serial);
+  Serial.println("");
 
   receivedJson = "";
   root.prettyPrintTo(receivedJson);
@@ -295,74 +328,6 @@ void ExtractSensorData() {
   //Serial.println("");
   
   //Serial.println("----------------------");
-}
-
-void notifyToApp() 
-{
-  if(compressorTankPercentage > 90 && isSTankFullEmailSent == false) {
-     Blynk.email("Compressor Tank - Full", "Compressor Tank is Full");  
-     isSTankFullEmailSent = true;
-
-     terminal.println("Compressor Tank is Full");
-     terminal.flush();
-  }
-  else if(compressorTankPercentage < 90 && compressorTankPercentage > 10) {
-    isSTankFullEmailSent = false;
-  }
-  
-  if (compressorTankPercentage < 25 && compressorTankPercentage > 10 && isSTankLowEmailSent == false) {
-      Blynk.email("Compressor Tank - Empty", "Compressor Tank is Empty. Please Refill.");
-      terminal.println("Tank is Empty. Please Refill");
-      terminal.flush();
-      isSTankLowEmailSent = true;
-  }
-  else if(compressorTankPercentage > 40) {
-    isSTankLowEmailSent = false; 
-  }
-  
-  if(cementTankPercentage > 95 && isCTankFullEmailSent == false) {
-      Blynk.email("Cement Tank - Full", "Cement Tank is Full.");
-      terminal.println("Cement Tank is Full.");
-      terminal.flush();
-      isCTankFullEmailSent = true;  
-  }
-  else if(cementTankPercentage > 20) {
-    isCTankFullEmailSent = false;
-  }
-  
-  if(cementTankPercentage < 25 && cementTankPercentage > 10 && isCTankLowEmailSent == false) {
-      Blynk.email("Cement Tank - Empty", "Cement Tank is Empty. Please Refill.");
-      isCTankLowEmailSent = true;
-      terminal.println("Tank is Empty. Please Refill.");
-      terminal.flush();
-  }
-  else if(cementTankPercentage > 40) {
-    isCTankLowEmailSent = false;
-  }
-    
-  if(isSlowNotify == 0 && isSlow == 1) {
-    Blynk.notify("Sintex Tank is Empty!! Please switch On Motor.");
-    Blynk.email("Sintex Tank - Empty", "Sintex Tank is Empty!! Please switch On Motor.");
-    isSlowNotify = 1;
-
-    terminal.println("Sintex Tank is Empty!! Please switch On Motor.");
-    terminal.flush();
-  }
-  else if(isSlow == 0) {
-    isSlowNotify = 0;
-  }
-
-  if(isShighNotify == 0 && isShigh == 1) {
-    Blynk.notify("Sintex Tank is Full!! Please switch Off Motor.");
-    Blynk.email("Sintex Tank - Full", "Sintex Tank is Full!! Please switch Off Motor.");
-    isShighNotify = 1;
-
-    terminal.println("Sintex Tank is Full!! Please switch Off Motor.");
-    terminal.flush();
-  }
-  else if(isShigh == 0) {
-    isShighNotify = 0;
-  }
 }
 
 void uploadtoBlynk(){
@@ -408,8 +373,8 @@ void uploadToThingSpeak()
 }
 
 BLYNK_CONNECTED(){
-  Blynk.email("{DEVICE_NAME} Successfully Connected", "{DEVICE_NAME} Connected");
-  Blynk.notify("{DEVICE_NAME} Successfully Connected");
+  //Blynk.email("{DEVICE_NAME} Successfully Connected", "{DEVICE_NAME} Connected");
+  //Blynk.notify("{DEVICE_NAME} Successfully Connected");
 }
 
 BLYNK_WRITE(V0) {
@@ -477,7 +442,7 @@ void loop() {
   uploadThingSpeakTimer.run();
   notifyTimer.run();
   systemTimer.run();
-  wifiChecker.run();
+  //wifiChecker.run();
 
   ExtractSensorData();
   setupDateTime();

@@ -1,11 +1,11 @@
 #define strigger 7
 #define secho 6
 #define ctrigger 5
-#define cecho 4
-#define mtrigger 3
-#define mecho 2
+#define cecho 13
+#define mtrigger 4
+#define mecho 12
 
-#include <SoftwareSerial.h>
+#include <SoftwareSerial.h> 
 #include <ArduinoJson.h>
 SoftwareSerial serialPort(9,10); //Rx and Tx
 
@@ -45,7 +45,16 @@ void setup() {
   
   serialPort.begin(115200);
   Serial.begin(115200);
-  Serial.println("----------------SETUP INITIATED--------------------------");
+  Serial.println("-SETUP INITIATED---");
+  Serial.print("[CT,CE]");
+  Serial.print(strigger);
+  Serial.print(secho);
+  Serial.print("[CeT,CeE]");
+  Serial.print(ctrigger);
+  Serial.print(cecho);
+  Serial.print("[MT,ME]");  
+  Serial.print(mtrigger);
+  Serial.println(mecho);
   pinMode(strigger, OUTPUT);
   pinMode(secho, INPUT);
   pinMode(ctrigger, OUTPUT);
@@ -55,8 +64,7 @@ void setup() {
   ssensorrestorecalibration = scalibrationvalue;
   csensorrestorecalibration = ccalibrationvalue;
   msensorrestorecalibration = mcalibrationvalue;
-  
-  Serial.println("----------------SETUP COMPLETED--------------------------");
+  Serial.println("---SETUP COMPLETED--Firmware Date: OCT, 29, 2023");
 }
   
 void loop() {
@@ -96,11 +104,11 @@ void checkWaterLevelInCompressorTank(JsonObject& root) {
   //Simulate..
   //distance = 135;
   
-  //Serial.println("Compressor duration");
-  //Serial.println(duration);
+  Serial.println("Compressor duration");
+  Serial.println(duration);
 
-//  Serial.println("Compressor distance");
-//  Serial.println(distance);
+  Serial.println("Compressor distance");
+  Serial.println(distance);
   
   //Blynk.virtualWrite(V1, distance);
   root["SensorDistance"] = distance;
@@ -178,7 +186,7 @@ void checkWaterLevelInCompressorTank(JsonObject& root) {
   
   Serial.println("cement duration");
   Serial.println(duration);
-//
+
   Serial.println("cement distance");
   Serial.println(distance);
   
@@ -257,7 +265,7 @@ void checkWaterLevelInMiniTank(JsonObject& root) {
   duration = pulseIn(mecho, HIGH);
 
   //simulator.
-  duration = 500;
+  //duration = 500;
   distance = (duration/2) / 29.1;
  
   Serial.println("Mini duration");
@@ -266,7 +274,7 @@ void checkWaterLevelInMiniTank(JsonObject& root) {
   Serial.println("Mini distance");
   Serial.println(distance);
   
-  //Blynk.virtualWrite(V1, distance);DU
+  //Blynk.virtualWrite(V1, distance);
   root["MSensorDistance"] = distance;
   
   mcalibrationvalue = msensorrestorecalibration;
