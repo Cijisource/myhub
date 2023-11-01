@@ -24,7 +24,7 @@
 
 #define BLYNK_TEMPLATE_ID "TMPL0tRLYzze"
 #define BLYNK_TEMPLATE_NAME "Sintex Tank Monitor"
-#define BLYNK_FIRMWARE_VERSION        "0.1.0"
+#define BLYNK_FIRMWARE_VERSION        "0.1.2"
 
 #define BLYNK_PRINT Serial
 //#define BLYNK_DEBUG
@@ -293,10 +293,13 @@ void ExtractSensorData() {
   root.prettyPrintTo(Serial);
   Serial.println("");
 
+  lastDataReceivedTime = currentDate;
+
   receivedJson = "";
   root.prettyPrintTo(receivedJson);
 
   systemUptime=root["ArduinoUptime"];
+  uptimesec = systemUptime;
   distance=root["SSensorDistance"];
   tankPercentage=root["STankLevelPercentage"];
   
@@ -420,6 +423,13 @@ BLYNK_WRITE(V50)
     setupWifi();
   } else if (String("sys") == param.asStr()) {  
     terminal.println("System Time.." + currentDate);
+    terminal.println("---END of MSG--");
+  } else if (String("help") == param.asStr()) {  
+    terminal.println("lws -- last wifi status");
+    terminal.println("lts -- last thinkspeak status");
+    terminal.println("lrd -- last received sensor data");
+    terminal.println("sys -- Get System Time");
+    terminal.println("lst -- last received sensor data time");
     terminal.println("---END of MSG--");
   }
   else {
