@@ -24,7 +24,9 @@
 
 #define BLYNK_TEMPLATE_ID "TMPL0tRLYzze"
 #define BLYNK_TEMPLATE_NAME "Sintex Tank Monitor"
-#define BLYNK_FIRMWARE_VERSION        "0.1.2"
+#define DEVICE_NAME "Sintex Tank Monitor"
+#define DEVICE_SOFTWARE "ESP_SINTEX_11_10_2023{DD_MM_YYYY}"
+#define BLYNK_FIRMWARE_VERSION "0.1.3"
 
 #define BLYNK_PRINT Serial
 //#define BLYNK_DEBUG
@@ -88,6 +90,7 @@ String thingspeakStatus = "----";
 String receivedJson = "RECEIVED JSON";
 String lastDataReceivedTime = "";
 String wifiStatus = "";
+String wifiChecklog = "ZeroCHeck";
 
 //Week Days
 String weekDays[7]={"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
@@ -113,9 +116,10 @@ int isSlowNotify, isShighNotify;
 
 void setup()
 {
+  setupWifi();
   BlynkEdgent.begin();
   setupConfiguration = "";
-  setupConfiguration = "Blynk v" BLYNK_VERSION ": Device started";
+  setupConfiguration = "Blynk v" BLYNK_VERSION ": Device started " DEVICE_SOFTWARE;
 
   Serial.begin(9600);
   Serial.begin(115200);
@@ -146,16 +150,22 @@ void setupTimers() {
   
   //notifyTimer.setInterval(900000L, notifyToApp); // 15 mins  
   systemTimer.setInterval(900000L, setupDateTime); // 15 mins 
-  //wifiChecker.setInterval(900000L, setupWifi); // 15 mins 
+  wifiChecker.setInterval(900000L, setupWifi); // 15 mins 
 }
 
 void setupWifi() {
-  String wifiChecklog = "Performing Wifi Check.. ..";
+  bool result = Blynk.connected();
+  if(result == false){
+    Blynk.logEvent("deviceconnectionlost", String("Device Lost Server connection") + DEVICE_NAME);
+  }
+  
+  wifiChecklog = "Performing Wifi Check.. ..";
   Serial.print(wifiChecklog);
   Serial.print(WiFi.status());
   if (WiFi.status() == WL_CONNECTED) { // Skip since network connected..
     WiFi.begin(ssid, pass); // Connect to the network
-    wifiChecklog = wifiChecklog + "Wifi Connection Exists.. Hence Skipping..";
+    wifiChecklog.concat(wifiChecklog + "Wifi Connection Exists.. Hence Skipping.." + WiFi.localIP().toString() + currentDate);
+    Blynk.logEvent("wificonnection", wifiChecklog);
     terminal.println(wifiChecklog);
     terminal.flush();
     return;
@@ -164,6 +174,7 @@ void setupWifi() {
   WiFi.begin(ssid, pass); // Connect to the network
   Serial.print("Connecting to ");
   setupConfiguration = setupConfiguration + "Connecting to " + ssid;
+  Blynk.logEvent("wificonnection", "ReConnecting to WIFI");
   terminal.print(ssid);
   
   Serial.print(ssid); Serial.println(" ...");
@@ -377,7 +388,7 @@ void uploadToThingSpeak()
 
 BLYNK_CONNECTED(){
   //Blynk.email("{DEVICE_NAME} Successfully Connected", "{DEVICE_NAME} Connected");
-  //Blynk.notify("{DEVICE_NAME} Successfully Connected");
+  Blynk.logEvent("deviceconnected", String("Successfully Connected") + DEVICE_NAME);
 }
 
 BLYNK_WRITE(V0) {
@@ -414,6 +425,9 @@ BLYNK_WRITE(V50)
   } else if (String("lts") == param.asStr()) {
     terminal.println(thingspeakStatus);
     terminal.println("---END of MSG--"); 
+  } else if (String("lwc") == param.asStr()) {
+    terminal.println("wifi check" + wifiChecklog);
+    terminal.println("---END of MSG--"); 
   } else if (String("lws") == param.asStr()) {
     terminal.println("last wifi status" + wifiStatus);
     terminal.println("---END of MSG--"); 
@@ -424,12 +438,17 @@ BLYNK_WRITE(V50)
   } else if (String("sys") == param.asStr()) {  
     terminal.println("System Time.." + currentDate);
     terminal.println("---END of MSG--");
+  } else if (String("sconfig") == param.asStr()) {  
+    terminal.println("Setup Configuration.." + setupConfiguration);
+    terminal.println("---END of MSG--");
   } else if (String("help") == param.asStr()) {  
     terminal.println("lws -- last wifi status");
     terminal.println("lts -- last thinkspeak status");
     terminal.println("lrd -- last received sensor data");
     terminal.println("sys -- Get System Time");
     terminal.println("lst -- last received sensor data time");
+    terminal.println("lwc -- wifi check log");
+    terminal.println("sconfig -- Setup Configuration");
     terminal.println("---END of MSG--");
   }
   else {
@@ -450,9 +469,9 @@ void loop() {
   // Initiates SimpleTimer
   uploadBlynkTimer.run(); 
   uploadThingSpeakTimer.run();
-  notifyTimer.run();
+  //notifyTimer.run();
   systemTimer.run();
-  //wifiChecker.run();
+  wifiChecker.run();
 
   ExtractSensorData();
   setupDateTime();
