@@ -148,9 +148,9 @@ void setupTimers() {
   uploadBlynkTimer.setInterval(10000L, uploadtoBlynk); // 1 second
   uploadThingSpeakTimer.setInterval(140000L, uploadToThingSpeak); // (120000 -- 2 minutes & 20 seconds)
   
-  //notifyTimer.setInterval(900000L, notifyToApp); // 15 mins  
-  systemTimer.setInterval(900000L, setupDateTime); // 15 mins 
-  wifiChecker.setInterval(900000L, setupWifi); // 15 mins 
+  //notifyTimer.setInterval(900000L, notifyToApp); // 30 mins  
+  systemTimer.setInterval(900000L, setupDateTime); // 30 mins 
+  wifiChecker.setInterval(900000L, setupWifi); // 30 mins 
 }
 
 void setupWifi() {
@@ -159,7 +159,7 @@ void setupWifi() {
     Blynk.logEvent("attentionrequired", String("Device Lost Server connection") + DEVICE_NAME);
   }
   
-  wifiChecklog = "Performing Wifi Check.. ..";
+  wifiChecklog = "Performing Wifi Check.. .." + WiFi.status();
   Serial.print(wifiChecklog);
   Serial.print(WiFi.status());
   if (WiFi.status() == WL_CONNECTED) { // Skip since network connected..
@@ -173,8 +173,8 @@ void setupWifi() {
   
   WiFi.begin(ssid, pass); // Connect to the network
   Serial.print("Connecting to ");
-  setupConfiguration = setupConfiguration + "Connecting to " + ssid;
-  Blynk.logEvent("attentionrequired", "ReConnecting to WIFI");
+  setupConfiguration = setupConfiguration + "Connecting to " + WiFi.SSID();
+  Blynk.logEvent("checkrequired", "ReConnecting to WIFI" + setupConfiguration);
   terminal.print(ssid);
   
   Serial.print(ssid); Serial.println(" ...");
@@ -378,6 +378,7 @@ void uploadToThingSpeak()
   else {
     Serial.println("Problem writing to channel. HTTP error code " + String(httpCode));
     thingspeakStatus = "Problem writing to channel. HTTP error code " + String(httpCode);
+    Blynk.logEvent("attentionrequired", thingspeakStatus + currentDate);
   }
 
   thingspeakStatus = thingspeakStatus + currentDate;
