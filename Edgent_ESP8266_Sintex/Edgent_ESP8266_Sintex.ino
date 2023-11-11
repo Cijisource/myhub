@@ -156,7 +156,7 @@ void setupTimers() {
 void setupWifi() {
   bool result = Blynk.connected();
   if(result == false){
-    Blynk.logEvent("deviceconnectionlost", String("Device Lost Server connection") + DEVICE_NAME);
+    Blynk.logEvent("attentionrequired", String("Device Lost Server connection") + DEVICE_NAME);
   }
   
   wifiChecklog = "Performing Wifi Check.. ..";
@@ -164,8 +164,8 @@ void setupWifi() {
   Serial.print(WiFi.status());
   if (WiFi.status() == WL_CONNECTED) { // Skip since network connected..
     WiFi.begin(ssid, pass); // Connect to the network
-    wifiChecklog.concat(wifiChecklog + "Wifi Connection Exists.. Hence Skipping.." + WiFi.localIP().toString() + currentDate);
-    Blynk.logEvent("wificonnection", wifiChecklog);
+    wifiChecklog.concat(wifiChecklog + "Wifi Connection Exists.. Hence Skipping.. " + WiFi.SSID() + WiFi.localIP().toString() + currentDate);
+    Blynk.logEvent("forinformation", wifiChecklog);
     terminal.println(wifiChecklog);
     terminal.flush();
     return;
@@ -174,7 +174,7 @@ void setupWifi() {
   WiFi.begin(ssid, pass); // Connect to the network
   Serial.print("Connecting to ");
   setupConfiguration = setupConfiguration + "Connecting to " + ssid;
-  Blynk.logEvent("wificonnection", "ReConnecting to WIFI");
+  Blynk.logEvent("attentionrequired", "ReConnecting to WIFI");
   terminal.print(ssid);
   
   Serial.print(ssid); Serial.println(" ...");
@@ -388,7 +388,7 @@ void uploadToThingSpeak()
 
 BLYNK_CONNECTED(){
   //Blynk.email("{DEVICE_NAME} Successfully Connected", "{DEVICE_NAME} Connected");
-  Blynk.logEvent("deviceconnected", String("Successfully Connected") + DEVICE_NAME);
+  Blynk.logEvent("forinformation", String("Successfully Connected") + DEVICE_NAME);
 }
 
 BLYNK_WRITE(V0) {
