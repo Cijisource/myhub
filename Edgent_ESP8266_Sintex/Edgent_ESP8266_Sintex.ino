@@ -25,8 +25,8 @@
 #define BLYNK_TEMPLATE_ID "TMPL0tRLYzze"
 #define BLYNK_TEMPLATE_NAME "Sintex Tank Monitor"
 #define DEVICE_NAME "Sintex Tank Monitor"
-#define DEVICE_SOFTWARE "ESP_SINTEX_11_10_2023{DD_MM_YYYY}"
-#define BLYNK_FIRMWARE_VERSION "0.1.3"
+#define DEVICE_SOFTWARE "ESP_SINTEX_15_11_2023{DD_MM_YYYY}"
+#define BLYNK_FIRMWARE_VERSION "0.1.4"
 
 #define BLYNK_PRINT Serial
 //#define BLYNK_DEBUG
@@ -156,10 +156,13 @@ void setupTimers() {
 void setupWifi() {
   bool result = Blynk.connected();
   if(result == false){
-    Blynk.logEvent("attentionrequired", String("Device Lost Server connection") + DEVICE_NAME);
+    //Blynk.logEvent("attentionrequired", String("Device Lost Server connection") + DEVICE_NAME);
+    wifiChecklog.concat("Device Lost Server connection");
+    wifiChecklog.concat(DEVICE_NAME);
+    wifiChecklog.concat("--" + currentDate);
   }
   
-  wifiChecklog = "Performing Wifi Check.. .." + WiFi.status();
+  wifiChecklog.concat("Performing Wifi Check.. .." + WiFi.status());
   Serial.print(wifiChecklog);
   Serial.print(WiFi.status());
   if (WiFi.status() == WL_CONNECTED) { // Skip since network connected..
