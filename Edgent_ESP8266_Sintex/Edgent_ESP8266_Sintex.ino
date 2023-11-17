@@ -25,8 +25,8 @@
 #define BLYNK_TEMPLATE_ID "TMPL0tRLYzze"
 #define BLYNK_TEMPLATE_NAME "Sintex Tank Monitor"
 #define DEVICE_NAME "Sintex Tank Monitor"
-#define DEVICE_SOFTWARE "ESP_SINTEX_15_11_2023{DD_MM_YYYY}"
-#define BLYNK_FIRMWARE_VERSION "0.1.4"
+#define DEVICE_SOFTWARE "ESP_SINTEX_17_11_2023{DD_MM_YYYY}"
+#define BLYNK_FIRMWARE_VERSION "0.1.6"
 
 #define BLYNK_PRINT Serial
 //#define BLYNK_DEBUG
@@ -157,17 +157,14 @@ void setupWifi() {
   bool result = Blynk.connected();
   if(result == false){
     //Blynk.logEvent("attentionrequired", String("Device Lost Server connection") + DEVICE_NAME);
-    wifiChecklog.concat("Device Lost Server connection");
-    wifiChecklog.concat(DEVICE_NAME);
-    wifiChecklog.concat("--" + currentDate);
+    wifiChecklog = String("Device Lost Server connection") + DEVICE_NAME + currentDate;
   }
   
-  wifiChecklog.concat("Performing Wifi Check.. .." + WiFi.status());
+  wifiChecklog = ("Performing Wifi Check.. .." + WiFi.status());
   Serial.print(wifiChecklog);
   Serial.print(WiFi.status());
   if (WiFi.status() == WL_CONNECTED) { // Skip since network connected..
-    WiFi.begin(ssid, pass); // Connect to the network
-    wifiChecklog.concat(wifiChecklog + "Wifi Connection Exists.. Hence Skipping.. " + WiFi.SSID() + WiFi.localIP().toString() + currentDate);
+    wifiChecklog = (wifiChecklog + "Wifi Connection Exists.. Hence Skipping.. " + WiFi.SSID() + WiFi.localIP().toString() + currentDate);
     Blynk.logEvent("forinformation", wifiChecklog);
     terminal.println(wifiChecklog);
     terminal.flush();
