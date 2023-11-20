@@ -25,8 +25,8 @@
 #define BLYNK_TEMPLATE_ID "TMPL0tRLYzze"
 #define BLYNK_TEMPLATE_NAME "Sintex Tank Monitor"
 #define DEVICE_NAME "Sintex Tank Monitor"
-#define DEVICE_SOFTWARE "ESP_SINTEX_17_11_2023{DD_MM_YYYY}"
-#define BLYNK_FIRMWARE_VERSION "0.1.6"
+#define DEVICE_SOFTWARE "ESP_SINTEX_18_11_2023{DD_MM_YYYY}"
+#define BLYNK_FIRMWARE_VERSION "0.1.7"
 
 #define BLYNK_PRINT Serial
 //#define BLYNK_DEBUG
@@ -44,6 +44,7 @@
 #include "BlynkEdgent.h"
 #include <NTPClient.h>
 #include <ESP8266WiFi.h>
+#include <WiFiClientSecure.h>
 #include <WiFiUdp.h>
 #include <ArduinoJson.h>
 #include <SoftwareSerial.h>
@@ -53,12 +54,19 @@ SoftwareSerial serialPort(D1,D0); //Rx and Tx
 
 BlynkTimer uploadBlynkTimer;
 BlynkTimer uploadThingSpeakTimer;
-BlynkTimer notifyTimer;
+BlynkTimer extractSensorTimer;
 BlynkTimer systemTimer;
 BlynkTimer wifiChecker;
 
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "pool.ntp.org");
+
+//----------------------------------------Host & httpsPort
+const char* host = "script.google.com";
+const int httpsPort = 443;
+//----------------------------------------
+
+String GAS_ID = "AKfycbzrMQ_C1NPbQYd6tDzF8nh_Fu2JIuy06ZIzjk6pJbsxeQPLGdAVolq0pKQZNuJ8OFyg";
 
 unsigned long myChannelNumber = 1184761;
 const char * myWriteAPIKey = "Z85MB42QWY3T4VGG";
@@ -82,6 +90,7 @@ char ssid[] = "Cijaiz_Zone0";
 char pass[] = "Bb00m5050";
 
 WiFiClient client;
+WiFiClientSecure eclient; //--> Create a WiFiClientSecure object.
 WidgetTerminal terminal(V50);
 
 String setupConfiguration = "---";
@@ -133,6 +142,7 @@ void setup()
   isCTankLowEmailSent = false;
   isCTankFullEmailSent = false;
 
+  setupDateTime();
   setupTimers();
   printDeviceBanner();
   
@@ -141,15 +151,17 @@ void setup()
   ThingSpeak.begin(client);
   delay(200);  
   Serial.println("----------------SETUP COMPLETED--------------------------");
+
+  eclient.setInsecure();
 }
 
 void setupTimers() {
   // Setup a function to be called every second
-  uploadBlynkTimer.setInterval(10000L, uploadtoBlynk); // 1 second
+  uploadBlynkTimer.setInterval(10000L, uploadtoBlynk); // 10 second
   uploadThingSpeakTimer.setInterval(140000L, uploadToThingSpeak); // (120000 -- 2 minutes & 20 seconds)
   
-  //notifyTimer.setInterval(900000L, notifyToApp); // 30 mins  
-  systemTimer.setInterval(900000L, setupDateTime); // 30 mins 
+  //extractSensorTimer.setInterval(1000L, ExtractSensorData); // 1 secoond  
+  systemTimer.setInterval(1000L, setupDateTime); // 1 secoond  
   wifiChecker.setInterval(900000L, setupWifi); // 30 mins 
 }
 
@@ -197,8 +209,8 @@ void setupWifi() {
     Serial.print(++i); Serial.print(' ');
   }
 
-  wifiChecklog = wifiChecklog + "Wifi connection lost.. Hence Reconnecting...";
-  wifiChecklog = wifiChecklog + "\n" + "Connection established!";
+  wifiChecklog = setupConfiguration + wifiChecklog + "Wifi connection lost.. Hence Reconnecting...";
+  wifiChecklog = wifiChecklog + "\n" + "Connection established!" + currentDate;
   Serial.println('\n');
   Serial.println("Connection established!");  
   Serial.print("IP address:\t");
@@ -271,11 +283,30 @@ void simulateSensor(){
   consumedLitres = 1;
   
   availableLitres = 1;
+  terminal.println(tankPercentage + distance + consumedLitres);
+}
+
+void CustomDelay (int delaylength, int iterations) {
+  unsigned long currenttime = millis();
+  unsigned long prevtime = millis();
+  int currentIteration = 0;
+  
+  while(true) {
+    if((currenttime - prevtime) == delaylength) {
+      currentIteration = currentIteration + 1;
+      simulateSensor();
+      terminal.println(currentIteration);
+      if(currentIteration == iterations){
+        break;
+      }
+    }
+    currenttime = millis();
+  }
 }
 
 void ExtractSensorData() {
-  Serial.print(".");
-  Serial.println(WiFi.status());
+  //Serial.print(".");
+  //Serial.println(WiFi.status());
 
   //TODO: Comment this piece in production code.
   //simulateSensor();
@@ -283,8 +314,8 @@ void ExtractSensorData() {
   StaticJsonBuffer<1000> jsonBuffer;
   JsonObject& root = jsonBuffer.parseObject(serialPort);
 
-  long uptimemls = millis();
-  uptimesec = uptimemls/1000;
+  //long uptimemls = millis();
+  //uptimesec = uptimemls/1000;
   
   //Serial.println("Esp uptime ");
   //Serial.println(uptimesec);
@@ -345,19 +376,19 @@ void ExtractSensorData() {
 }
 
 void uploadtoBlynk(){
-  Blynk.virtualWrite(V4, tankPercentage);
-  Blynk.virtualWrite(V1, distance);
-  Blynk.virtualWrite(V2, consumedLitres);
-  Blynk.virtualWrite(V3, availableLitres);
+  //Blynk.virtualWrite(V4, tankPercentage);
+  //Blynk.virtualWrite(V1, distance);
+  //Blynk.virtualWrite(V2, consumedLitres);
+  //Blynk.virtualWrite(V3, availableLitres);
   
-  Blynk.virtualWrite(V5, systemUptime);  
+  //Blynk.virtualWrite(V5, systemUptime);  
   Blynk.virtualWrite(V6, uptimesec);
-  Blynk.virtualWrite(V9, waterlevelat);
+  //Blynk.virtualWrite(V9, waterlevelat);
 
-  Blynk.virtualWrite(V7, compressorTankPercentage);
+  //Blynk.virtualWrite(V7, compressorTankPercentage);
   //Serial.println(compressorTankPercentage);
 
-  Blynk.virtualWrite(V8, cementTankPercentage);
+  //Blynk.virtualWrite(V8, cementTankPercentage);
   //Serial.println(cementTankPercentage);
 }
 
@@ -434,6 +465,7 @@ BLYNK_WRITE(V50)
     terminal.println("---END of MSG--"); 
   } else if (String("ssys") == param.asStr()) {
     setupDateTime();
+    terminal.println("Synced Systemtime" + currentDate);
   } else if (String("swifi") == param.asStr()) {
     setupWifi();
   } else if (String("sys") == param.asStr()) {  
@@ -441,6 +473,14 @@ BLYNK_WRITE(V50)
     terminal.println("---END of MSG--");
   } else if (String("sconfig") == param.asStr()) {  
     terminal.println("Setup Configuration.." + setupConfiguration);
+    terminal.println("---END of MSG--");
+  } else if (String("dev") == param.asStr()) {  
+    terminal.println("Dev Usage");
+    CustomDelay(1000, 3);
+    terminal.println("---END of MSG--");
+  } else if (String("ssheet") == param.asStr()) { 
+    terminal.println("Sending data to Google Sheel..");
+    sendData(20, 20);
     terminal.println("---END of MSG--");
   } else if (String("help") == param.asStr()) {  
     terminal.println("lws -- last wifi status");
@@ -450,6 +490,8 @@ BLYNK_WRITE(V50)
     terminal.println("lst -- last received sensor data time");
     terminal.println("lwc -- wifi check log");
     terminal.println("sconfig -- Setup Configuration");
+    terminal.println("ssheet -- Send Data to GoogleSheet");
+    terminal.println("dev -- Run silent programs as per developer {Developer Usage Only}s");
     terminal.println("---END of MSG--");
   }
   else {
@@ -464,16 +506,67 @@ BLYNK_WRITE(V50)
   terminal.flush();
 }
 
+// Subroutine for sending data to Google Sheets
+void sendData(float tem, int hum) {
+  terminal.println("==========");
+  terminal.print("connecting to ");
+  terminal.println(host);
+  
+  //----------------------------------------Connect to Google host
+  if (!eclient.connect(host, httpsPort)) {
+    terminal.println("connection failed");
+    return;
+  }
+  //----------------------------------------
+
+  //----------------------------------------Processing data and sending data
+  String water_level =  String(tem);
+  // String string_temperature =  String(tem, DEC); 
+  String string_humidity =  String(hum, DEC); 
+  String url = "/macros/s/" + GAS_ID + "/exec?WaterLevel=" + water_level;
+  terminal.print("requesting URL: ");
+  terminal.println(url);
+
+  eclient.print(String("GET ") + url + " HTTP/1.1\r\n" +
+         "Host: " + host + "\r\n" +
+         "User-Agent: BuildFailureDetectorESP8266\r\n" +
+         "Connection: close\r\n\r\n");
+
+  terminal.println("request sent");
+  //----------------------------------------
+
+  //----------------------------------------Checking whether the data was sent successfully or not
+  while (eclient.connected()) {
+    String line = eclient.readStringUntil('\n');
+    if (line == "\r") {
+      terminal.println("headers received");
+      break;
+    }
+  }
+  String line = eclient.readStringUntil('\n');
+  if (line.startsWith("{\"state\":\"success\"")) {
+    terminal.println("esp8266/Arduino CI successfull!");
+  } else {
+    terminal.println("esp8266/Arduino CI has failed");
+  }
+  terminal.print("reply was : ");
+  terminal.println(line);
+  terminal.println("closing connection");
+  terminal.println("==========");
+  terminal.println();
+  //----------------------------------------
+} 
+
 void loop() {
   BlynkEdgent.run();
 
   // Initiates SimpleTimer
   uploadBlynkTimer.run(); 
   uploadThingSpeakTimer.run();
-  //notifyTimer.run();
+  //extractSensorTimer.run();
   systemTimer.run();
   wifiChecker.run();
 
   ExtractSensorData();
-  setupDateTime();
+  //setupDateTime();
 }
