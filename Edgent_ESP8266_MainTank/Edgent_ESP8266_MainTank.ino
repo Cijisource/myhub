@@ -156,7 +156,7 @@ void setupWifi() {
   Serial.print(WiFi.status());
   if (WiFi.status() == WL_CONNECTED) { // Skip since network connected..
     wifiChecklog = (wifiChecklog + "Wifi Connection Exists.. Hence Skipping.. " + WiFi.SSID() + WiFi.localIP().toString() + currentDate);
-    Blynk.logEvent("forinformation", wifiChecklog);
+    Blynk.logEvent("email_sent", wifiChecklog);
     terminal.println(wifiChecklog);
     terminal.flush();
     return;
@@ -165,7 +165,7 @@ void setupWifi() {
   WiFi.begin(ssid, pass); // Connect to the network
   Serial.print("Connecting to ");
   setupConfiguration = setupConfiguration + "Connecting to " + WiFi.SSID();
-  Blynk.logEvent("checkrequired", "ReConnecting to WIFI" + setupConfiguration);
+  Blynk.logEvent("email_sent", "ReConnecting to WIFI" + setupConfiguration);
   terminal.print(ssid);
   
   Serial.print(ssid); Serial.println(" ...");
@@ -446,7 +446,7 @@ wifiStatus = WiFi.status();
 
 BLYNK_CONNECTED(){
   //Blynk.email("{DEVICE_NAME} Successfully Connected", "{DEVICE_NAME} Connected");
-  Blynk.logEvent("forinformation", String("Successfully Connected") + DEVICE_NAME);
+  Blynk.logEvent("email_sent", String("Successfully Connected") + DEVICE_NAME);
 }
 
 // You can send commands from Terminal to your hardware. Just use
