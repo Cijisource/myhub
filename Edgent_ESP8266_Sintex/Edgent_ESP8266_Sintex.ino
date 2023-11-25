@@ -4,7 +4,7 @@
   You can easily build mobile and web interfaces for any
   projects by simply dragging and dropping widgets.
 
-    Downloads, docs, tutorials: https://www.blynk.io
+    Downloads, docs, tutorials: https://www.blynk.io 
     Sketch generator:           https://examples.blynk.cc
     Blynk community:            https://community.blynk.cc
     Follow us:                  https://www.fb.com/blynkapp
@@ -25,15 +25,15 @@
 #define BLYNK_TEMPLATE_ID "TMPL0tRLYzze"
 #define BLYNK_TEMPLATE_NAME "Sintex Tank Monitor"
 #define DEVICE_NAME "Sintex Tank Monitor"
-#define DEVICE_SOFTWARE "ESP_SINTEX_18_11_2023{DD_MM_YYYY}"
-#define BLYNK_FIRMWARE_VERSION "0.1.7"
+#define DEVICE_SOFTWARE "ESP_SINTEX_24_11_2023{DD_MM_YYYY}"
+#define BLYNK_FIRMWARE_VERSION "0.1.9"
 
 #define BLYNK_PRINT Serial
 //#define BLYNK_DEBUG
 
 #define APP_DEBUG
 
-#define BLYNK_PRINT Serial 
+//#define BLYNK_PRINT Serial 
 
 // Uncomment your board, or configure a custom board in Settings.h
 //#define USE_SPARKFUN_BLYNK_BOARD
@@ -110,6 +110,7 @@ String months[12]={"January", "February", "March", "April", "May", "June", "July
 String currentDate;
 long systemUptime, uptimesec;
 long distance, cdistance;
+unsigned long previousMillis = 0;
 
 int tankPercentage, ctankPercentage, compressorTankPercentage, cementTankPercentage;
 float availableLitres, cavailableLitres; 
@@ -126,6 +127,9 @@ int isSlowNotify, isShighNotify;
 void setup()
 {
   setupWifi();
+  WiFi.setAutoReconnect(true);
+  WiFi.persistent(true);
+  
   BlynkEdgent.begin();
   setupConfiguration = "";
   setupConfiguration = "Blynk v" BLYNK_VERSION ": Device started " DEVICE_SOFTWARE;
@@ -162,7 +166,7 @@ void setupTimers() {
   
   //extractSensorTimer.setInterval(1000L, ExtractSensorData); // 1 secoond  
   systemTimer.setInterval(1000L, setupDateTime); // 1 secoond  
-  wifiChecker.setInterval(900000L, setupWifi); // 30 mins 
+  wifiChecker.setInterval(120000, setupWifi); // 30 mins 900000L
 }
 
 void setupWifi() {
@@ -177,7 +181,7 @@ void setupWifi() {
   Serial.print(WiFi.status());
   if (WiFi.status() == WL_CONNECTED) { // Skip since network connected..
     wifiChecklog = (wifiChecklog + "Wifi Connection Exists.. Hence Skipping.. " + WiFi.SSID() + WiFi.localIP().toString() + currentDate);
-    Blynk.logEvent("forinformation", wifiChecklog);
+    //Blynk.logEvent("forinformation", wifiChecklog);
     terminal.println(wifiChecklog);
     terminal.flush();
     return;
@@ -186,6 +190,11 @@ void setupWifi() {
   WiFi.begin(ssid, pass); // Connect to the network
   Serial.print("Connecting to ");
   setupConfiguration = setupConfiguration + "Connecting to " + WiFi.SSID();
+
+  //Re connect blynkedgent..
+  //Blynk.connect();
+  //BlynkEdgent.begin();
+  
   Blynk.logEvent("checkrequired", "ReConnecting to WIFI" + setupConfiguration);
   terminal.print(ssid);
   
@@ -278,29 +287,49 @@ void setupDateTime() {
 }
 
 void simulateSensor(){
+  char comma= ',';
+  String logValue;
+
   tankPercentage = 1;
   distance = 1;
   consumedLitres = 1;
   
   availableLitres = 1;
-  terminal.println(tankPercentage + distance + consumedLitres);
+  logValue =(String(tankPercentage)+ comma + String(distance) + comma + String(consumedLitres));
+  terminal.println(logValue);
+}
+
+void CustomDelays (int delaylength) {
+  unsigned long currenttime = millis();
+  terminal.println("start delay: " + currenttime);
+  while ( (currenttime - previousMillis) < delaylength) {
+    currenttime = millis();
+  }
+  previousMillis = millis();
+  terminal.println("end delay: " + currenttime);
+  terminal.println("delay diff: " + currenttime - previousMillis);
 }
 
 void CustomDelay (int delaylength, int iterations) {
-  unsigned long currenttime = millis();
-  unsigned long prevtime = millis();
+  unsigned long currentMillis = millis();
+  unsigned long previousMillis = 0;
   int currentIteration = 0;
+
+  terminal.println(currentMillis);
+  terminal.println(delaylength);
   
   while(true) {
-    if((currenttime - prevtime) == delaylength) {
+    if (currentMillis - previousMillis >=delaylength) {
       currentIteration = currentIteration + 1;
-      simulateSensor();
-      terminal.println(currentIteration);
+      
       if(currentIteration == iterations){
+        terminal.println("breaking");
+        terminal.println(currentIteration);
+        terminal.println(currentMillis);
         break;
       }
     }
-    currenttime = millis();
+    currentMillis = millis();
   }
 }
 
@@ -475,9 +504,9 @@ BLYNK_WRITE(V50)
     terminal.println("Setup Configuration.." + setupConfiguration);
     terminal.println("---END of MSG--");
   } else if (String("dev") == param.asStr()) {  
-    terminal.println("Dev Usage");
-    CustomDelay(1000, 3);
-    terminal.println("---END of MSG--");
+    CustomDelay(1000, 1);
+    simulateSensor();
+    terminal.println("---END of MSG-- Completed Run.." + currentDate);
   } else if (String("ssheet") == param.asStr()) { 
     terminal.println("Sending data to Google Sheel..");
     sendData(20, 20);
