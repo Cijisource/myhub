@@ -161,8 +161,9 @@ void setup()
 
 void setupTimers() {
   // Setup a function to be called every second
-  uploadBlynkTimer.setInterval(10000L, uploadtoBlynk); // 10 second
-  uploadThingSpeakTimer.setInterval(140000L, uploadToThingSpeak); // (120000 -- 2 minutes & 20 seconds)
+  //uploadBlynkTimer.setInterval(10000L, uploadtoBlynk); // 10 second
+  //uploadBlynkTimer.setInterval(10000L, dd);// 10 second
+  //uploadThingSpeakTimer.setInterval(140000L, uploadToThingSpeak); // (120000 -- 2 minutes & 20 seconds)
   
   //extractSensorTimer.setInterval(1000L, ExtractSensorData); // 1 secoond  
   systemTimer.setInterval(1000L, setupDateTime); // 1 secoond  
@@ -283,7 +284,7 @@ void setupDateTime() {
   //Serial.print("Current date: ");
   //Serial.println(currentDate);
 
-  //Serial.println("");
+  //Serial.println(currentDate);
 }
 
 void simulateSensor(){
@@ -293,43 +294,96 @@ void simulateSensor(){
   tankPercentage = 1;
   distance = 1;
   consumedLitres = 1;
+
+  systemUptime = millis()/1000;
+  uptimesec = millis()/1000;
+
+  waterlevelat = 20;
+  compressorTankPercentage = 30;
+  cementTankPercentage = 35;
   
   availableLitres = 1;
   logValue =(String(tankPercentage)+ comma + String(distance) + comma + String(consumedLitres));
   terminal.println(logValue);
 }
 
-void CustomDelays (int delaylength) {
-  unsigned long currenttime = millis();
-  terminal.println("start delay: " + currenttime);
-  while ( (currenttime - previousMillis) < delaylength) {
-    currenttime = millis();
-  }
-  previousMillis = millis();
-  terminal.println("end delay: " + currenttime);
-  terminal.println("delay diff: " + currenttime - previousMillis);
+bool BlynkUploadPart1() {
+  //CustomDelay(5000, 1);
+  Serial.println("called walkone3.." + currentDate);
+
+  Blynk.virtualWrite(V4, tankPercentage);
+  Blynk.virtualWrite(V1, distance);
+  Blynk.virtualWrite(V2, consumedLitres);
+  Blynk.virtualWrite(V5, systemUptime); 
+  Serial.println(systemUptime);
+  return true;
 }
 
-void CustomDelay (int delaylength, int iterations) {
-  unsigned long currentMillis = millis();
-  unsigned long previousMillis = 0;
-  int currentIteration = 0;
+bool BlynkUploadPart2() {
+  //CustomDelay(5000, 1);
+  Serial.println("called walkone7.." + currentDate);
 
-  terminal.println(currentMillis);
-  terminal.println(delaylength);
-  
-  while(true) {
-    if (currentMillis - previousMillis >=delaylength) {
-      currentIteration = currentIteration + 1;
-      
-      if(currentIteration == iterations){
-        terminal.println("breaking");
-        terminal.println(currentIteration);
-        terminal.println(currentMillis);
-        break;
+  Blynk.virtualWrite(V3, availableLitres);
+  Blynk.virtualWrite(V6, uptimesec);
+  Blynk.virtualWrite(V9, waterlevelat);
+
+  Blynk.virtualWrite(V7, compressorTankPercentage);
+  //Serial.println(compressorTankPercentage);
+
+  Blynk.virtualWrite(V8, cementTankPercentage);
+  return true;
+}
+
+bool is3done = false;
+bool is7done = false;
+void altdelay3 (int delaylength) {
+  // remember the last time that the movement was done
+  static unsigned long lastUpdateTime;
+  // current time
+  unsigned long currentTime = millis();
+    
+  // checkif 5 seconds have passed
+  if (currentTime - lastUpdateTime >= 3000)
+  {
+    // update the last update time
+    lastUpdateTime = currentTime;
+
+    if(is3done == false){
+      //call your function
+      bool rc = BlynkUploadPart1();
+      // if the function did one complete cycle
+      if (rc == true)
+      {
+        Serial.println("walkone completed for 3 seconds" + currentDate);
+        is3done = true;
+        is7done = false;
       }
     }
-    currentMillis = millis();
+  }
+}
+
+void altdelay7 (int delaylength) {
+  // remember the last time that the movement was done
+  static unsigned long lastUpdateTime;
+  // current time
+  unsigned long currentTime = millis();
+    
+  // checkif 5 seconds have passed
+  if (currentTime - lastUpdateTime >= 7000)
+  {
+    // update the last update time
+    lastUpdateTime = currentTime;
+    if(is3done == true && is7done == false){
+      //call your function
+      bool rc = BlynkUploadPart2();
+      // if the function did one complete cycle
+      if (rc == true)
+      {
+        Serial.println("walkone completed for 7 seconds" + currentDate);
+        is3done=false;
+        is7done=true;
+      }  
+    }
   }
 }
 
@@ -338,7 +392,7 @@ void ExtractSensorData() {
   //Serial.println(WiFi.status());
 
   //TODO: Comment this piece in production code.
-  //simulateSensor();
+  simulateSensor();
   
   StaticJsonBuffer<1000> jsonBuffer;
   JsonObject& root = jsonBuffer.parseObject(serialPort);
@@ -504,7 +558,7 @@ BLYNK_WRITE(V50)
     terminal.println("Setup Configuration.." + setupConfiguration);
     terminal.println("---END of MSG--");
   } else if (String("dev") == param.asStr()) {  
-    CustomDelay(1000, 1);
+    altdelay3(10);
     simulateSensor();
     terminal.println("---END of MSG-- Completed Run.." + currentDate);
   } else if (String("ssheet") == param.asStr()) { 
@@ -598,4 +652,6 @@ void loop() {
 
   ExtractSensorData();
   //setupDateTime();
+  altdelay3(10);
+  altdelay7(10);
 }

@@ -25,8 +25,8 @@
 #define BLYNK_TEMPLATE_ID "TMPL0tRLYzze"
 #define BLYNK_TEMPLATE_NAME "Sintex Tank Monitor"
 #define DEVICE_NAME "Sintex Tank Monitor"
-#define DEVICE_SOFTWARE "ESP_SINTEX_24_11_2023{DD_MM_YYYY}"
-#define BLYNK_FIRMWARE_VERSION "0.1.9"
+#define DEVICE_SOFTWARE "ESP_SINTEX_26_11_2023{DD_MM_YYYY}"
+#define BLYNK_FIRMWARE_VERSION "0.2.0"
 
 #define BLYNK_PRINT Serial
 //#define BLYNK_DEBUG
@@ -162,7 +162,7 @@ void setup()
 void setupTimers() {
   // Setup a function to be called every second
   uploadBlynkTimer.setInterval(10000L, uploadtoBlynk); // 10 second
-  uploadThingSpeakTimer.setInterval(140000L, uploadToThingSpeak); // (120000 -- 2 minutes & 20 seconds)
+  //uploadThingSpeakTimer.setInterval(140000L, uploadToThingSpeak); // (120000 -- 2 minutes & 20 seconds)
   
   //extractSensorTimer.setInterval(1000L, ExtractSensorData); // 1 secoond  
   systemTimer.setInterval(1000L, setupDateTime); // 1 secoond  
@@ -299,37 +299,104 @@ void simulateSensor(){
   terminal.println(logValue);
 }
 
-void CustomDelays (int delaylength) {
-  unsigned long currenttime = millis();
-  terminal.println("start delay: " + currenttime);
-  while ( (currenttime - previousMillis) < delaylength) {
-    currenttime = millis();
+bool ThingSpeakUploadPart1() {
+  //CustomDelay(5000, 1);
+  Serial.println("called walkone3.." + currentDate);
+
+  ThingSpeak.setField(7, tankPercentage);
+
+  thingspeakStatus = "";
+  int httpCode = ThingSpeak.writeFields(myChannelNumber, myWriteAPIKey);
+  if (httpCode == 200) {
+    Serial.println("Channel write successful.");
+    thingspeakStatus = "Channel write successful.";
   }
-  previousMillis = millis();
-  terminal.println("end delay: " + currenttime);
-  terminal.println("delay diff: " + currenttime - previousMillis);
+  else {
+    Serial.println("Problem writing to channel. HTTP error code " + String(httpCode));
+    thingspeakStatus = "Problem writing to channel. HTTP error code " + String(httpCode);
+  }
+
+  thingspeakStatus = thingspeakStatus + currentDate;
+  terminal.println("Last Wifi Status.. " + wifiStatus);
+  terminal.println("Thingspeak Upload Status.. " + thingspeakStatus);
+  terminal.flush();
+  return true;
 }
 
-void CustomDelay (int delaylength, int iterations) {
-  unsigned long currentMillis = millis();
-  unsigned long previousMillis = 0;
-  int currentIteration = 0;
+bool ThingSpeakUploadPart2() {
+  //CustomDelay(5000, 1);
+  Serial.println("called walkone7.." + currentDate);
 
-  terminal.println(currentMillis);
-  terminal.println(delaylength);
-  
-  while(true) {
-    if (currentMillis - previousMillis >=delaylength) {
-      currentIteration = currentIteration + 1;
-      
-      if(currentIteration == iterations){
-        terminal.println("breaking");
-        terminal.println(currentIteration);
-        terminal.println(currentMillis);
-        break;
+  ThingSpeak.setField(8, consumedLitres);
+
+  thingspeakStatus = "";
+  int httpCode = ThingSpeak.writeFields(myChannelNumber, myWriteAPIKey);
+  if (httpCode == 200) {
+    Serial.println("Channel write successful.");
+    thingspeakStatus = "Channel write successful.";
+  }
+  else {
+    Serial.println("Problem writing to channel. HTTP error code " + String(httpCode));
+    thingspeakStatus = "Problem writing to channel. HTTP error code " + String(httpCode);
+  }
+
+  thingspeakStatus = thingspeakStatus + currentDate;
+  terminal.println("Last Wifi Status.. " + wifiStatus);
+  terminal.println("Thingspeak Upload Status.. " + thingspeakStatus);
+  terminal.flush();
+  return true;
+}
+
+bool is3done = false;
+bool is7done = false;
+void altdelay3 (int delaylength) {
+  // remember the last time that the movement was done
+  static unsigned long lastUpdateTime;
+  // current time
+  unsigned long currentTime = millis();
+    
+  // checkif 5 seconds have passed
+  if (currentTime - lastUpdateTime >= 60000)
+  {
+    // update the last update time
+    lastUpdateTime = currentTime;
+
+    if(is3done == false){
+      //call your function
+      bool rc = ThingSpeakUploadPart1();
+      // if the function did one complete cycle
+      if (rc == true)
+      {
+        Serial.println("walkone completed for 3 seconds" + currentDate);
+        is3done = true;
+        is7done = false;
       }
     }
-    currentMillis = millis();
+  }
+}
+
+void altdelay7 (int delaylength) {
+  // remember the last time that the movement was done
+  static unsigned long lastUpdateTime;
+  // current time
+  unsigned long currentTime = millis();
+    
+  // checkif 5 seconds have passed
+  if (currentTime - lastUpdateTime >= 60000)
+  {
+    // update the last update time
+    lastUpdateTime = currentTime;
+    if(is3done == true && is7done == false){
+      //call your function
+      bool rc = ThingSpeakUploadPart2();
+      // if the function did one complete cycle
+      if (rc == true)
+      {
+        Serial.println("walkone completed for 7 seconds" + currentDate);
+        is3done=false;
+        is7done=true;
+      }  
+    }
   }
 }
 
@@ -504,7 +571,6 @@ BLYNK_WRITE(V50)
     terminal.println("Setup Configuration.." + setupConfiguration);
     terminal.println("---END of MSG--");
   } else if (String("dev") == param.asStr()) {  
-    CustomDelay(1000, 1);
     simulateSensor();
     terminal.println("---END of MSG-- Completed Run.." + currentDate);
   } else if (String("ssheet") == param.asStr()) { 
@@ -591,11 +657,13 @@ void loop() {
 
   // Initiates SimpleTimer
   uploadBlynkTimer.run(); 
-  uploadThingSpeakTimer.run();
+  //uploadThingSpeakTimer.run();
   //extractSensorTimer.run();
   systemTimer.run();
   wifiChecker.run();
 
   ExtractSensorData();
   //setupDateTime();
+  altdelay3(10);
+  altdelay7(10);
 }
