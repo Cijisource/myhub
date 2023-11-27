@@ -334,8 +334,17 @@ Serial.print(".");
 
   cdistance=root["CSensorDistance"];
   ctankPercentage=root["CTankLevelPercentage"];
+  //TODO - REmove
+  ctankPercentage = 20;
+  
   cavailableLitres = root["CAvailableLitres"];
+  //TODO - REmove
+  cavailableLitres = 200;
+  
   cconsumedLitres = root["CConsumedLitres"];
+  //TODO - REmove
+  ctankPercentage = 300;
+  
   cwaterlevelAt = root["CWaterlevelat"];
 
   mdistance=root["MSensorDistance"];
@@ -429,7 +438,7 @@ void uploadToThingSpeakPart1()
         }
         else {
           Serial.println("Problem writing to channel. HTTP error code " + String(httpCode));
-          thingspeakStatus = "Problem writing to channel. HTTP error code " + String(httpCode);
+          thingspeakStatus = "Problem writing to channel via part1. HTTP error code " + String(httpCode);
           Blynk.logEvent("email_sent", String(httpCode) + "--" + thingspeakStatus);
         }
       
@@ -464,7 +473,7 @@ void uploadToThingSpeakPart2()
       }
       else {
         Serial.println("Problem writing to channel. HTTP error code " + String(httpCode));
-        thingspeakStatus = "Problem writing to channel. HTTP error code " + String(httpCode);
+        thingspeakStatus = "Problem writing to channel via part2. HTTP error code " + String(httpCode);
         Blynk.logEvent("attentionrequired", thingspeakStatus + currentDate);
       }
     

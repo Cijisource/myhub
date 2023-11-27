@@ -408,10 +408,16 @@ void ExtractSensorData() {
   systemUptime=root["ArduinoUptime"];
   uptimesec = systemUptime;
   distance=root["SSensorDistance"];
+
+
   tankPercentage=root["STankLevelPercentage"];
+  //TODO - REmove 
+  tankPercentage = 55;
   
   availableLitres = root["SAvailableLitres"];
   consumedLitres = root["SConsumedLitres"];
+  //TODO - REmove 
+  consumedLitres = 200;
   waterlevelat = root["SWaterLevel"];
   
   isSlow = root["isSlow"];
