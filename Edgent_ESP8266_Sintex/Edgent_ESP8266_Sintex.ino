@@ -25,8 +25,8 @@
 #define BLYNK_TEMPLATE_ID "TMPL0tRLYzze"
 #define BLYNK_TEMPLATE_NAME "Sintex Tank Monitor"
 #define DEVICE_NAME "Sintex Tank Monitor"
-#define DEVICE_SOFTWARE "ESP_SINTEX_26_11_2023{DD_MM_YYYY}"
-#define BLYNK_FIRMWARE_VERSION "0.2.0"
+#define DEVICE_SOFTWARE "ESP_SINTEX_27_11_2023{DD_MM_YYYY}"
+#define BLYNK_FIRMWARE_VERSION "0.2.1"
 
 #define BLYNK_PRINT Serial
 //#define BLYNK_DEBUG
@@ -116,6 +116,9 @@ int tankPercentage, ctankPercentage, compressorTankPercentage, cementTankPercent
 float availableLitres, cavailableLitres; 
 float consumedLitres, cconsumedLitres, waterlevelat;
 
+bool isThingPart1Complete = false;
+bool isThingPart2Complete = false;
+
 bool isSTankLowEmailSent = true;
 bool isSTankFullEmailSent = true;
 bool isCTankLowEmailSent = true;
@@ -162,7 +165,8 @@ void setup()
 void setupTimers() {
   // Setup a function to be called every second
   uploadBlynkTimer.setInterval(10000L, uploadtoBlynk); // 10 second
-  //uploadThingSpeakTimer.setInterval(140000L, uploadToThingSpeak); // (120000 -- 2 minutes & 20 seconds)
+  uploadThingSpeakTimer.setInterval(60000L, uploadToThingSpeakPart1); // (108000L -- 1.8 minutes)
+  uploadThingSpeakTimer.setInterval(120000L, uploadToThingSpeakPart2); // (108000L -- 1.8 minutes)
   
   //extractSensorTimer.setInterval(1000L, ExtractSensorData); // 1 secoond  
   systemTimer.setInterval(1000L, setupDateTime); // 1 secoond  
@@ -299,104 +303,69 @@ void simulateSensor(){
   terminal.println(logValue);
 }
 
-bool ThingSpeakUploadPart1() {
-  //CustomDelay(5000, 1);
-  Serial.println("called walkone3.." + currentDate);
-
-  ThingSpeak.setField(7, tankPercentage);
-
-  thingspeakStatus = "";
-  int httpCode = ThingSpeak.writeFields(myChannelNumber, myWriteAPIKey);
-  if (httpCode == 200) {
-    Serial.println("Channel write successful.");
-    thingspeakStatus = "Channel write successful.";
-  }
-  else {
-    Serial.println("Problem writing to channel. HTTP error code " + String(httpCode));
-    thingspeakStatus = "Problem writing to channel. HTTP error code " + String(httpCode);
-  }
-
-  thingspeakStatus = thingspeakStatus + currentDate;
-  terminal.println("Last Wifi Status.. " + wifiStatus);
-  terminal.println("Thingspeak Upload Status.. " + thingspeakStatus);
-  terminal.flush();
-  return true;
-}
-
-bool ThingSpeakUploadPart2() {
-  //CustomDelay(5000, 1);
-  Serial.println("called walkone7.." + currentDate);
-
-  ThingSpeak.setField(8, consumedLitres);
-
-  thingspeakStatus = "";
-  int httpCode = ThingSpeak.writeFields(myChannelNumber, myWriteAPIKey);
-  if (httpCode == 200) {
-    Serial.println("Channel write successful.");
-    thingspeakStatus = "Channel write successful.";
-  }
-  else {
-    Serial.println("Problem writing to channel. HTTP error code " + String(httpCode));
-    thingspeakStatus = "Problem writing to channel. HTTP error code " + String(httpCode);
-  }
-
-  thingspeakStatus = thingspeakStatus + currentDate;
-  terminal.println("Last Wifi Status.. " + wifiStatus);
-  terminal.println("Thingspeak Upload Status.. " + thingspeakStatus);
-  terminal.flush();
-  return true;
-}
-
-bool is3done = false;
-bool is7done = false;
-void altdelay3 (int delaylength) {
-  // remember the last time that the movement was done
-  static unsigned long lastUpdateTime;
-  // current time
-  unsigned long currentTime = millis();
+void uploadToThingSpeakPart1()
+{ 
+    Serial.println("1");
+    if(isThingPart1Complete == false){
+        wifiStatus = WiFi.status();
     
-  // checkif 5 seconds have passed
-  if (currentTime - lastUpdateTime >= 60000)
-  {
-    // update the last update time
-    lastUpdateTime = currentTime;
+        //Upload to Thinkspeak
+        tankPercentage = 50;
+        ThingSpeak.setField(7, tankPercentage);
+      
+        thingspeakStatus = "";
+        int httpCode = ThingSpeak.writeFields(myChannelNumber, myWriteAPIKey);
+        if (httpCode == 200) {
+          Serial.println("Channel write successful.");
+          thingspeakStatus = "Channel write successful.";
+        }
+        else {
+          Serial.println("Problem writing to channel. HTTP error code " + String(httpCode));
+          thingspeakStatus = "Problem writing to channel via part1. HTTP error code " + String(httpCode);
+          Blynk.logEvent("attentionrequired", String(httpCode) + "--" + thingspeakStatus);
+        }
+      
+        thingspeakStatus = thingspeakStatus + currentDate;
+        terminal.println("Last Wifi Status.. " + wifiStatus);
+        terminal.println("Thingspeak Upload Status.. " + thingspeakStatus);
+        terminal.flush();
+  
+    isThingPart1Complete = true;
+    isThingPart2Complete = false;  
+  }
+}
 
-    if(is3done == false){
-      //call your function
-      bool rc = ThingSpeakUploadPart1();
-      // if the function did one complete cycle
-      if (rc == true)
-      {
-        Serial.println("walkone completed for 3 seconds" + currentDate);
-        is3done = true;
-        is7done = false;
+void uploadToThingSpeakPart2()
+{ 
+  Serial.println("2");
+  if(isThingPart2Complete == false){
+      Serial.println("Upload Call from Thing2 -- " + currentDate);
+
+      wifiStatus = wifiStatus + WiFi.status();
+      
+      //Upload to Thinkspeak
+      consumedLitres = 200;
+      ThingSpeak.setField(8, consumedLitres);
+    
+      thingspeakStatus = "";
+      int httpCode = ThingSpeak.writeFields(myChannelNumber, myWriteAPIKey);
+      if (httpCode == 200) {
+        Serial.println("Channel write successful.");
+        thingspeakStatus = "Channel write successful.";
       }
-    }
-  }
-}
-
-void altdelay7 (int delaylength) {
-  // remember the last time that the movement was done
-  static unsigned long lastUpdateTime;
-  // current time
-  unsigned long currentTime = millis();
+      else {
+        Serial.println("Problem writing to channel. HTTP error code " + String(httpCode));
+        thingspeakStatus = "Problem writing to channel via part2. HTTP error code " + String(httpCode);
+        Blynk.logEvent("attentionrequired", thingspeakStatus + currentDate);
+      }
     
-  // checkif 5 seconds have passed
-  if (currentTime - lastUpdateTime >= 60000)
-  {
-    // update the last update time
-    lastUpdateTime = currentTime;
-    if(is3done == true && is7done == false){
-      //call your function
-      bool rc = ThingSpeakUploadPart2();
-      // if the function did one complete cycle
-      if (rc == true)
-      {
-        Serial.println("walkone completed for 7 seconds" + currentDate);
-        is3done=false;
-        is7done=true;
-      }  
-    }
+      thingspeakStatus = thingspeakStatus + currentDate;
+      terminal.println("Thingspeak Upload Status.. " + thingspeakStatus);
+      terminal.println("Last WIFI Status.. " + wifiStatus);
+      terminal.flush();
+  
+     isThingPart1Complete = false;
+     isThingPart2Complete = true;  
   }
 }
 
@@ -657,13 +626,11 @@ void loop() {
 
   // Initiates SimpleTimer
   uploadBlynkTimer.run(); 
-  //uploadThingSpeakTimer.run();
+  uploadThingSpeakTimer.run();
   //extractSensorTimer.run();
   systemTimer.run();
   wifiChecker.run();
 
   ExtractSensorData();
   //setupDateTime();
-  altdelay3(10);
-  altdelay7(10);
 }
