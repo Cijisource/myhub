@@ -25,8 +25,8 @@
 #define BLYNK_TEMPLATE_ID "TMPL0tRLYzze"
 #define BLYNK_TEMPLATE_NAME "Sintex Tank Monitor"
 #define DEVICE_NAME "Sintex Tank Monitor"
-#define DEVICE_SOFTWARE "ESP_SINTEX_27_11_2023{DD_MM_YYYY}"
-#define BLYNK_FIRMWARE_VERSION "0.2.1"
+#define DEVICE_SOFTWARE "ESP_SINTEX_29_11_2023{DD_MM_YYYY}"
+#define BLYNK_FIRMWARE_VERSION "0.2.3"
 
 #define BLYNK_PRINT Serial
 //#define BLYNK_DEBUG
@@ -68,8 +68,8 @@ const int httpsPort = 443;
 
 String GAS_ID = "AKfycbzrMQ_C1NPbQYd6tDzF8nh_Fu2JIuy06ZIzjk6pJbsxeQPLGdAVolq0pKQZNuJ8OFyg";
 
-unsigned long myChannelNumber = 1184761;
-const char * myWriteAPIKey = "Z85MB42QWY3T4VGG";
+unsigned long myChannelNumber = 2362424;
+const char * myWriteAPIKey = "3RIPHUIU73AV3SIY";
 
 char auth[] = "ODbXgkyA-fZohqppkwa0qm8QusGnDXCa";
 
@@ -165,8 +165,8 @@ void setup()
 void setupTimers() {
   // Setup a function to be called every second
   uploadBlynkTimer.setInterval(10000L, uploadtoBlynk); // 10 second
-  uploadThingSpeakTimer.setInterval(60000L, uploadToThingSpeakPart1); // (108000L -- 1.8 minutes)
-  uploadThingSpeakTimer.setInterval(120000L, uploadToThingSpeakPart2); // (108000L -- 1.8 minutes)
+  uploadThingSpeakTimer.setInterval(20000L, uploadToThingSpeakPart1); // (108000L -- 1.8 minutes)
+  uploadThingSpeakTimer.setInterval(40000L, uploadToThingSpeakPart2); // (108000L -- 1.8 minutes)
   
   //extractSensorTimer.setInterval(1000L, ExtractSensorData); // 1 secoond  
   systemTimer.setInterval(1000L, setupDateTime); // 1 secoond  
@@ -311,7 +311,7 @@ void uploadToThingSpeakPart1()
     
         //Upload to Thinkspeak
         tankPercentage = 50;
-        ThingSpeak.setField(7, tankPercentage);
+        ThingSpeak.setField(1, tankPercentage);
       
         thingspeakStatus = "";
         int httpCode = ThingSpeak.writeFields(myChannelNumber, myWriteAPIKey);
@@ -344,8 +344,7 @@ void uploadToThingSpeakPart2()
       wifiStatus = wifiStatus + WiFi.status();
       
       //Upload to Thinkspeak
-      consumedLitres = 200;
-      ThingSpeak.setField(8, consumedLitres);
+      ThingSpeak.setField(2, consumedLitres);
     
       thingspeakStatus = "";
       int httpCode = ThingSpeak.writeFields(myChannelNumber, myWriteAPIKey);

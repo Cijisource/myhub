@@ -25,8 +25,8 @@
 #define BLYNK_TEMPLATE_ID "TMPLe3Z3HbRn"
 #define BLYNK_TEMPLATE_NAME "Main Tank Monitor"
 #define DEVICE_NAME "Main Tank Monitor"
-#define DEVICE_SOFTWARE "ESP_MAINTANK_27_11_2023{DD_MM_YYYY}"
-#define BLYNK_FIRMWARE_VERSION "0.1.6"
+#define DEVICE_SOFTWARE "ESP_MAINTANK_30_11_2023{DD_MM_YYYY}"
+#define BLYNK_FIRMWARE_VERSION "0.1.8"
 
 #define BLYNK_PRINT Serial
 //#define BLYNK_DEBUG
@@ -99,6 +99,9 @@ long systemUptime, uptimesec;
 bool isThingPart1Complete = false;
 bool isThingPart2Complete = false;
 
+bool isBlynkPart1Complete = false;
+bool isBlynkPart2Complete = false;
+
 long distance, cdistance, mdistance, lastDistance;;
 int tankPercentage, ctankPercentage, mtankPercentage;
 float availableLitres, cavailableLitres, mavailableLitres, waterlevelAt, cwaterlevelAt, mwaterlevelAt; 
@@ -139,9 +142,10 @@ void setup()
 
 void setupTimers() {
   // Setup a function to be called every second
-  uploadBlynkTimer.setInterval(10000L, uploadtoBlynk); // 10 second
-  uploadThingSpeakTimer.setInterval(60000L, uploadToThingSpeakPart1); // (108000L -- 1.8 minutes)
-  uploadThingSpeakTimer.setInterval(120000L, uploadToThingSpeakPart2); // (108000L -- 1.8 minutes)
+  uploadBlynkTimer.setInterval(10000L, uploadtoBlynkPart1); // 10 second
+  uploadBlynkTimer.setInterval(25000L, uploadtoBlynkPart2); // 15 second
+  uploadThingSpeakTimer.setInterval(20000L, uploadToThingSpeakPart1); // (108000L -- 1.8 minutes)
+  uploadThingSpeakTimer.setInterval(40000L, uploadToThingSpeakPart2); // (108000L -- 1.8 minutes)
   
   //extractSensorTimer.setInterval(1000L, ExtractSensorData); // 1 secoond  
   systemTimer.setInterval(1000L, setupDateTime); // 1 secoond  
@@ -333,20 +337,11 @@ Serial.print(".");
   waterlevelAt = root["SWaterlevelat"];
 
   cdistance=root["CSensorDistance"];
-  ctankPercentage=root["CTankLevelPercentage"];
-  //TODO - REmove
-  ctankPercentage = 20;
-  
+  ctankPercentage=root["CTankLevelPercentage"];  
   cavailableLitres = root["CAvailableLitres"];
-  //TODO - REmove
-  cavailableLitres = 200;
-  
   cconsumedLitres = root["CConsumedLitres"];
-  //TODO - REmove
-  ctankPercentage = 300;
   
   cwaterlevelAt = root["CWaterlevelat"];
-
   mdistance=root["MSensorDistance"];
   mtankPercentage=root["MTankLevelPercentage"];
   mavailableLitres = root["MAvailableLitres"];
@@ -388,35 +383,78 @@ Serial.print(".");
   //Serial.println("----------------------");
 }
 
-void uploadtoBlynk(){
-  blynkStatus = "";
-  
-  //Blynk.virtualWrite(V0, tankPercentage);
-  //Blynk.virtualWrite(V1, distance);
-  //Blynk.virtualWrite(V2, consumedLitres);
-  
-  //Blynk.virtualWrite(V3, availableLitres);
-  //Blynk.virtualWrite(V4, waterlevelAt);
-  
-  Blynk.virtualWrite(V5, currentDate);  
-  Blynk.virtualWrite(V6, uptimesec);
+void uploadtoBlynkPart1(){
+  if(isBlynkPart1Complete == false){
 
-  //Blynk.virtualWrite(V10, ctankPercentage);
-  //Blynk.virtualWrite(V11, cdistance);
-  //Blynk.virtualWrite(V12, cconsumedLitres);
+    blynkStatus = "";
+    
+    //Blynk.virtualWrite(V0, tankPercentage);
+    //Blynk.virtualWrite(V1, distance);
+    //Blynk.virtualWrite(V2, consumedLitres);
+    
+    //Blynk.virtualWrite(V3, availableLitres);
+    //Blynk.virtualWrite(V4, waterlevelAt);
+    
+    Blynk.virtualWrite(V5, currentDate);  
+    Blynk.virtualWrite(V6, uptimesec);
   
-  //Blynk.virtualWrite(V13, cavailableLitres);
-  //Blynk.virtualWrite(V14, cwaterlevelAt);
-
-  Blynk.virtualWrite(V15, mtankPercentage);
-  Blynk.virtualWrite(V16, mdistance);
-  Blynk.virtualWrite(V17, mconsumedLitres);
+    //Blynk.virtualWrite(V10, ctankPercentage);
+    //Blynk.virtualWrite(V11, cdistance);
+    //Blynk.virtualWrite(V12, cconsumedLitres);
+    
+    //Blynk.virtualWrite(V13, cavailableLitres);
+    //Blynk.virtualWrite(V14, cwaterlevelAt);
   
-  Blynk.virtualWrite(V18, mavailableLitres);
-  Blynk.virtualWrite(V19, mwaterlevelAt);
+    Blynk.virtualWrite(V15, mtankPercentage);
+    Blynk.virtualWrite(V16, mdistance);
+    Blynk.virtualWrite(V17, mconsumedLitres);
+    
+    Blynk.virtualWrite(V18, mavailableLitres);
+    Blynk.virtualWrite(V19, mwaterlevelAt);
+  
+    blynkStatus = "Blynk Upload Complete.. part1" + currentDate;
+    terminal.println(blynkStatus);
 
-  blynkStatus = "Blynk Upload Complete.. " + currentDate;
-  terminal.println(blynkStatus);
+    isBlynkPart1Complete = true;
+    isBlynkPart2Complete = false;
+   }
+}
+
+void uploadtoBlynkPart2(){
+  if(isBlynkPart1Complete == true && isBlynkPart2Complete == false){
+
+    blynkStatus = "";
+    
+    Blynk.virtualWrite(V0, tankPercentage);
+    Blynk.virtualWrite(V1, distance);
+    Blynk.virtualWrite(V2, consumedLitres);
+    
+    Blynk.virtualWrite(V3, availableLitres);
+    Blynk.virtualWrite(V4, waterlevelAt);
+    
+    //Blynk.virtualWrite(V5, currentDate);  
+    //Blynk.virtualWrite(V6, uptimesec);
+  
+    Blynk.virtualWrite(V10, ctankPercentage);
+    Blynk.virtualWrite(V11, cdistance);
+    Blynk.virtualWrite(V12, cconsumedLitres);
+    
+    //Blynk.virtualWrite(V13, cavailableLitres);
+    //Blynk.virtualWrite(V14, cwaterlevelAt);
+  
+    //Blynk.virtualWrite(V15, mtankPercentage);
+    //Blynk.virtualWrite(V16, mdistance);
+    //Blynk.virtualWrite(V17, mconsumedLitres);
+    
+    //Blynk.virtualWrite(V18, mavailableLitres);
+    //Blynk.virtualWrite(V19, mwaterlevelAt);
+  
+    blynkStatus = "Blynk Upload Complete.. Part2 " + currentDate;
+    terminal.println(blynkStatus);
+
+    isBlynkPart1Complete = false;
+    isBlynkPart2Complete = true;
+   }
 }
 
 void uploadToThingSpeakPart1()
@@ -429,6 +467,7 @@ void uploadToThingSpeakPart1()
         ThingSpeak.setField(1, tankPercentage);
         ThingSpeak.setField(2, consumedLitres);
         ThingSpeak.setField(3, availableLitres);
+        ThingSpeak.setField(8, mconsumedLitres);
       
         thingspeakStatus = "";
         int httpCode = ThingSpeak.writeFields(myChannelNumber, myWriteAPIKey);
@@ -464,6 +503,7 @@ void uploadToThingSpeakPart2()
       ThingSpeak.setField(4, ctankPercentage);
       ThingSpeak.setField(5, cconsumedLitres);
       ThingSpeak.setField(6, cavailableLitres);
+      ThingSpeak.setField(7, mtankPercentage);
     
       thingspeakStatus = "";
       int httpCode = ThingSpeak.writeFields(myChannelNumber, myWriteAPIKey);
