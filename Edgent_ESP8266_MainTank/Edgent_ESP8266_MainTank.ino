@@ -25,8 +25,8 @@
 #define BLYNK_TEMPLATE_ID "TMPLe3Z3HbRn"
 #define BLYNK_TEMPLATE_NAME "Main Tank Monitor"
 #define DEVICE_NAME "Main Tank Monitor"
-#define DEVICE_SOFTWARE "ESP_MAINTANK_30_11_2023{DD_MM_YYYY}"
-#define BLYNK_FIRMWARE_VERSION "0.1.8"
+#define DEVICE_SOFTWARE "ESP_MAINTANK_02_12_2023{DD_MM_YYYY}"
+#define BLYNK_FIRMWARE_VERSION "0.1.9"
 
 #define BLYNK_PRINT Serial
 //#define BLYNK_DEBUG
@@ -388,30 +388,21 @@ void uploadtoBlynkPart1(){
 
     blynkStatus = "";
     
-    //Blynk.virtualWrite(V0, tankPercentage);
-    //Blynk.virtualWrite(V1, distance);
-    //Blynk.virtualWrite(V2, consumedLitres);
+    //Compressor
+    Blynk.virtualWrite(V0, tankPercentage);
+    Blynk.virtualWrite(V1, distance);
+    Blynk.virtualWrite(V4, waterlevelAt);
+
+    //Cement
+    Blynk.virtualWrite(V10, ctankPercentage);
+    Blynk.virtualWrite(V11, cdistance);
+    Blynk.virtualWrite(V14, cwaterlevelAt);
     
-    //Blynk.virtualWrite(V3, availableLitres);
-    //Blynk.virtualWrite(V4, waterlevelAt);
-    
-    Blynk.virtualWrite(V5, currentDate);  
-    Blynk.virtualWrite(V6, uptimesec);
-  
-    //Blynk.virtualWrite(V10, ctankPercentage);
-    //Blynk.virtualWrite(V11, cdistance);
-    //Blynk.virtualWrite(V12, cconsumedLitres);
-    
-    //Blynk.virtualWrite(V13, cavailableLitres);
-    //Blynk.virtualWrite(V14, cwaterlevelAt);
-  
+    //Mini
     Blynk.virtualWrite(V15, mtankPercentage);
     Blynk.virtualWrite(V16, mdistance);
-    Blynk.virtualWrite(V17, mconsumedLitres);
-    
-    Blynk.virtualWrite(V18, mavailableLitres);
     Blynk.virtualWrite(V19, mwaterlevelAt);
-  
+
     blynkStatus = "Blynk Upload Complete.. part1" + currentDate;
     terminal.println(blynkStatus);
 
@@ -422,33 +413,23 @@ void uploadtoBlynkPart1(){
 
 void uploadtoBlynkPart2(){
   if(isBlynkPart1Complete == true && isBlynkPart2Complete == false){
-
     blynkStatus = "";
-    
-    Blynk.virtualWrite(V0, tankPercentage);
-    Blynk.virtualWrite(V1, distance);
+
+    //Compressor
     Blynk.virtualWrite(V2, consumedLitres);
-    
     Blynk.virtualWrite(V3, availableLitres);
-    Blynk.virtualWrite(V4, waterlevelAt);
-    
-    //Blynk.virtualWrite(V5, currentDate);  
-    //Blynk.virtualWrite(V6, uptimesec);
-  
-    Blynk.virtualWrite(V10, ctankPercentage);
-    Blynk.virtualWrite(V11, cdistance);
+
+    //Mini
+    Blynk.virtualWrite(V17, mconsumedLitres);
+    Blynk.virtualWrite(V18, mavailableLitres);
+
+    //Cement
     Blynk.virtualWrite(V12, cconsumedLitres);
-    
-    //Blynk.virtualWrite(V13, cavailableLitres);
-    //Blynk.virtualWrite(V14, cwaterlevelAt);
-  
-    //Blynk.virtualWrite(V15, mtankPercentage);
-    //Blynk.virtualWrite(V16, mdistance);
-    //Blynk.virtualWrite(V17, mconsumedLitres);
-    
-    //Blynk.virtualWrite(V18, mavailableLitres);
-    //Blynk.virtualWrite(V19, mwaterlevelAt);
-  
+    Blynk.virtualWrite(V13, cavailableLitres);
+
+    Blynk.virtualWrite(V6, uptimesec);
+    Blynk.virtualWrite(V5, currentDate);  
+
     blynkStatus = "Blynk Upload Complete.. Part2 " + currentDate;
     terminal.println(blynkStatus);
 
@@ -559,7 +540,12 @@ wifiStatus = WiFi.status();
 }
 
 BLYNK_CONNECTED(){
-  //Blynk.email("{DEVICE_NAME} Successfully Connected", "{DEVICE_NAME} Connected");
+  bool isThingPart1Complete = false;
+  bool isThingPart2Complete = false;
+
+  bool isBlynkPart1Complete = false;
+  bool isBlynkPart2Complete = false;
+
   Blynk.logEvent("email_sent", String("Successfully Connected") + DEVICE_NAME);
 }
 

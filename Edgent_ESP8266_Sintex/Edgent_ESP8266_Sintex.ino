@@ -25,8 +25,8 @@
 #define BLYNK_TEMPLATE_ID "TMPL0tRLYzze"
 #define BLYNK_TEMPLATE_NAME "Sintex Tank Monitor"
 #define DEVICE_NAME "Sintex Tank Monitor"
-#define DEVICE_SOFTWARE "ESP_SINTEX_29_11_2023{DD_MM_YYYY}"
-#define BLYNK_FIRMWARE_VERSION "0.2.3"
+#define DEVICE_SOFTWARE "ESP_SINTEX_01_12_2023{DD_MM_YYYY}"
+#define BLYNK_FIRMWARE_VERSION "0.2.4"
 
 #define BLYNK_PRINT Serial
 //#define BLYNK_DEBUG
@@ -164,7 +164,7 @@ void setup()
 
 void setupTimers() {
   // Setup a function to be called every second
-  uploadBlynkTimer.setInterval(10000L, uploadtoBlynk); // 10 second
+  uploadBlynkTimer.setInterval(12000L, uploadtoBlynk); // 10 second
   uploadThingSpeakTimer.setInterval(20000L, uploadToThingSpeakPart1); // (108000L -- 1.8 minutes)
   uploadThingSpeakTimer.setInterval(40000L, uploadToThingSpeakPart2); // (108000L -- 1.8 minutes)
   
