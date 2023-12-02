@@ -4,7 +4,7 @@
   You can easily build mobile and web interfaces for any
   projects by simply dragging and dropping widgets.
 
-    Downloads, docs, tutorials: https://www.blynk.io
+    Downloads, docs, tutorials: https://www.blynk.io 
     Sketch generator:           https://examples.blynk.cc
     Blynk community:            https://community.blynk.cc
     Follow us:                  https://www.fb.com/blynkapp
@@ -25,15 +25,15 @@
 #define BLYNK_TEMPLATE_ID "TMPL0tRLYzze"
 #define BLYNK_TEMPLATE_NAME "Sintex Tank Monitor"
 #define DEVICE_NAME "Sintex Tank Monitor"
-#define DEVICE_SOFTWARE "ESP_SINTEX_18_11_2023{DD_MM_YYYY}"
-#define BLYNK_FIRMWARE_VERSION "0.1.7"
+#define DEVICE_SOFTWARE "ESP_SINTEX_01_12_2023{DD_MM_YYYY}"
+#define BLYNK_FIRMWARE_VERSION "0.2.4"
 
 #define BLYNK_PRINT Serial
 //#define BLYNK_DEBUG
 
 #define APP_DEBUG
 
-#define BLYNK_PRINT Serial 
+//#define BLYNK_PRINT Serial 
 
 // Uncomment your board, or configure a custom board in Settings.h
 //#define USE_SPARKFUN_BLYNK_BOARD
@@ -68,8 +68,8 @@ const int httpsPort = 443;
 
 String GAS_ID = "AKfycbzrMQ_C1NPbQYd6tDzF8nh_Fu2JIuy06ZIzjk6pJbsxeQPLGdAVolq0pKQZNuJ8OFyg";
 
-unsigned long myChannelNumber = 1184761;
-const char * myWriteAPIKey = "Z85MB42QWY3T4VGG";
+unsigned long myChannelNumber = 2362424;
+const char * myWriteAPIKey = "3RIPHUIU73AV3SIY";
 
 char auth[] = "ODbXgkyA-fZohqppkwa0qm8QusGnDXCa";
 
@@ -110,10 +110,14 @@ String months[12]={"January", "February", "March", "April", "May", "June", "July
 String currentDate;
 long systemUptime, uptimesec;
 long distance, cdistance;
+unsigned long previousMillis = 0;
 
 int tankPercentage, ctankPercentage, compressorTankPercentage, cementTankPercentage;
 float availableLitres, cavailableLitres; 
 float consumedLitres, cconsumedLitres, waterlevelat;
+
+bool isThingPart1Complete = false;
+bool isThingPart2Complete = false;
 
 bool isSTankLowEmailSent = true;
 bool isSTankFullEmailSent = true;
@@ -126,6 +130,9 @@ int isSlowNotify, isShighNotify;
 void setup()
 {
   setupWifi();
+  WiFi.setAutoReconnect(true);
+  WiFi.persistent(true);
+  
   BlynkEdgent.begin();
   setupConfiguration = "";
   setupConfiguration = "Blynk v" BLYNK_VERSION ": Device started " DEVICE_SOFTWARE;
@@ -157,12 +164,13 @@ void setup()
 
 void setupTimers() {
   // Setup a function to be called every second
-  uploadBlynkTimer.setInterval(10000L, uploadtoBlynk); // 10 second
-  uploadThingSpeakTimer.setInterval(140000L, uploadToThingSpeak); // (120000 -- 2 minutes & 20 seconds)
+  uploadBlynkTimer.setInterval(12000L, uploadtoBlynk); // 10 second
+  uploadThingSpeakTimer.setInterval(20000L, uploadToThingSpeakPart1); // (108000L -- 1.8 minutes)
+  uploadThingSpeakTimer.setInterval(40000L, uploadToThingSpeakPart2); // (108000L -- 1.8 minutes)
   
   //extractSensorTimer.setInterval(1000L, ExtractSensorData); // 1 secoond  
   systemTimer.setInterval(1000L, setupDateTime); // 1 secoond  
-  wifiChecker.setInterval(900000L, setupWifi); // 30 mins 
+  wifiChecker.setInterval(120000, setupWifi); // 30 mins 900000L
 }
 
 void setupWifi() {
@@ -177,7 +185,7 @@ void setupWifi() {
   Serial.print(WiFi.status());
   if (WiFi.status() == WL_CONNECTED) { // Skip since network connected..
     wifiChecklog = (wifiChecklog + "Wifi Connection Exists.. Hence Skipping.. " + WiFi.SSID() + WiFi.localIP().toString() + currentDate);
-    Blynk.logEvent("forinformation", wifiChecklog);
+    //Blynk.logEvent("forinformation", wifiChecklog);
     terminal.println(wifiChecklog);
     terminal.flush();
     return;
@@ -186,6 +194,11 @@ void setupWifi() {
   WiFi.begin(ssid, pass); // Connect to the network
   Serial.print("Connecting to ");
   setupConfiguration = setupConfiguration + "Connecting to " + WiFi.SSID();
+
+  //Re connect blynkedgent..
+  //Blynk.connect();
+  //BlynkEdgent.begin();
+  
   Blynk.logEvent("checkrequired", "ReConnecting to WIFI" + setupConfiguration);
   terminal.print(ssid);
   
@@ -278,29 +291,80 @@ void setupDateTime() {
 }
 
 void simulateSensor(){
+  char comma= ',';
+  String logValue;
+
   tankPercentage = 1;
   distance = 1;
   consumedLitres = 1;
   
   availableLitres = 1;
-  terminal.println(tankPercentage + distance + consumedLitres);
+  logValue =(String(tankPercentage)+ comma + String(distance) + comma + String(consumedLitres));
+  terminal.println(logValue);
 }
 
-void CustomDelay (int delaylength, int iterations) {
-  unsigned long currenttime = millis();
-  unsigned long prevtime = millis();
-  int currentIteration = 0;
+void uploadToThingSpeakPart1()
+{ 
+    Serial.println("1");
+    if(isThingPart1Complete == false){
+        wifiStatus = WiFi.status();
+    
+        //Upload to Thinkspeak
+        tankPercentage = 50;
+        ThingSpeak.setField(1, tankPercentage);
+      
+        thingspeakStatus = "";
+        int httpCode = ThingSpeak.writeFields(myChannelNumber, myWriteAPIKey);
+        if (httpCode == 200) {
+          Serial.println("Channel write successful.");
+          thingspeakStatus = "Channel write successful.";
+        }
+        else {
+          Serial.println("Problem writing to channel. HTTP error code " + String(httpCode));
+          thingspeakStatus = "Problem writing to channel via part1. HTTP error code " + String(httpCode);
+          Blynk.logEvent("attentionrequired", String(httpCode) + "--" + thingspeakStatus);
+        }
+      
+        thingspeakStatus = thingspeakStatus + currentDate;
+        terminal.println("Last Wifi Status.. " + wifiStatus);
+        terminal.println("Thingspeak Upload Status.. " + thingspeakStatus);
+        terminal.flush();
   
-  while(true) {
-    if((currenttime - prevtime) == delaylength) {
-      currentIteration = currentIteration + 1;
-      simulateSensor();
-      terminal.println(currentIteration);
-      if(currentIteration == iterations){
-        break;
+    isThingPart1Complete = true;
+    isThingPart2Complete = false;  
+  }
+}
+
+void uploadToThingSpeakPart2()
+{ 
+  Serial.println("2");
+  if(isThingPart2Complete == false){
+      Serial.println("Upload Call from Thing2 -- " + currentDate);
+
+      wifiStatus = wifiStatus + WiFi.status();
+      
+      //Upload to Thinkspeak
+      ThingSpeak.setField(2, consumedLitres);
+    
+      thingspeakStatus = "";
+      int httpCode = ThingSpeak.writeFields(myChannelNumber, myWriteAPIKey);
+      if (httpCode == 200) {
+        Serial.println("Channel write successful.");
+        thingspeakStatus = "Channel write successful.";
       }
-    }
-    currenttime = millis();
+      else {
+        Serial.println("Problem writing to channel. HTTP error code " + String(httpCode));
+        thingspeakStatus = "Problem writing to channel via part2. HTTP error code " + String(httpCode);
+        Blynk.logEvent("attentionrequired", thingspeakStatus + currentDate);
+      }
+    
+      thingspeakStatus = thingspeakStatus + currentDate;
+      terminal.println("Thingspeak Upload Status.. " + thingspeakStatus);
+      terminal.println("Last WIFI Status.. " + wifiStatus);
+      terminal.flush();
+  
+     isThingPart1Complete = false;
+     isThingPart2Complete = true;  
   }
 }
 
@@ -343,10 +407,16 @@ void ExtractSensorData() {
   systemUptime=root["ArduinoUptime"];
   uptimesec = systemUptime;
   distance=root["SSensorDistance"];
+
+
   tankPercentage=root["STankLevelPercentage"];
+  //TODO - REmove 
+  tankPercentage = 55;
   
   availableLitres = root["SAvailableLitres"];
   consumedLitres = root["SConsumedLitres"];
+  //TODO - REmove 
+  consumedLitres = 200;
   waterlevelat = root["SWaterLevel"];
   
   isSlow = root["isSlow"];
@@ -475,9 +545,8 @@ BLYNK_WRITE(V50)
     terminal.println("Setup Configuration.." + setupConfiguration);
     terminal.println("---END of MSG--");
   } else if (String("dev") == param.asStr()) {  
-    terminal.println("Dev Usage");
-    CustomDelay(1000, 3);
-    terminal.println("---END of MSG--");
+    simulateSensor();
+    terminal.println("---END of MSG-- Completed Run.." + currentDate);
   } else if (String("ssheet") == param.asStr()) { 
     terminal.println("Sending data to Google Sheel..");
     sendData(20, 20);

@@ -110,14 +110,13 @@ String months[12]={"January", "February", "March", "April", "May", "June", "July
 String currentDate;
 long systemUptime, uptimesec;
 long distance, cdistance;
-unsigned long previousMillis = 0;
 
 int tankPercentage, ctankPercentage, compressorTankPercentage, cementTankPercentage;
 float availableLitres, cavailableLitres; 
 float consumedLitres, cconsumedLitres, waterlevelat;
 
-bool isSTankLowEmailSent = true;
-bool isSTankFullEmailSent = true;
+bool isThingPart1Complete = false;
+bool isThingPart2Complete = false;
 bool isCTankLowEmailSent = true;
 bool isCTankFullEmailSent = true;
 
@@ -141,10 +140,6 @@ void setup()
   delay(10);
   
   Serial.println("----------------SETUP INITIATED--------------------------");
-  isSTankLowEmailSent = false;
-  isSTankFullEmailSent = false;
-  isCTankLowEmailSent = false;
-  isCTankFullEmailSent = false;
 
   setupDateTime();
   setupTimers();
@@ -161,8 +156,10 @@ void setup()
 
 void setupTimers() {
   // Setup a function to be called every second
-  uploadBlynkTimer.setInterval(10000L, uploadtoBlynk); // 10 second
-  uploadThingSpeakTimer.setInterval(140000L, uploadToThingSpeak); // (120000 -- 2 minutes & 20 seconds)
+  //uploadBlynkTimer.setInterval(10000L, uploadtoBlynk); // 10 second
+  //uploadBlynkTimer.setInterval(10000L, dd);// 10 second
+  //uploadThingSpeakTimer.setInterval(60000L, uploadToThingSpeak1); // (120000 -- 2 minutes & 20 seconds)
+  //uploadThingSpeakTimer.setInterval(120000L, uploadToThingSpeak2); // (120000 -- 2 minutes & 20 seconds)
   
   //extractSensorTimer.setInterval(1000L, ExtractSensorData); // 1 secoond  
   systemTimer.setInterval(1000L, setupDateTime); // 1 secoond  
@@ -283,7 +280,7 @@ void setupDateTime() {
   //Serial.print("Current date: ");
   //Serial.println(currentDate);
 
-  //Serial.println("");
+  //Serial.println(currentDate);
 }
 
 void simulateSensor(){
@@ -293,44 +290,44 @@ void simulateSensor(){
   tankPercentage = 1;
   distance = 1;
   consumedLitres = 1;
+
+  systemUptime = millis()/1000;
+  uptimesec = millis()/1000;
+
+  waterlevelat = 20;
+  compressorTankPercentage = 30;
+  cementTankPercentage = 35;
   
   availableLitres = 1;
   logValue =(String(tankPercentage)+ comma + String(distance) + comma + String(consumedLitres));
   terminal.println(logValue);
 }
 
-void CustomDelays (int delaylength) {
-  unsigned long currenttime = millis();
-  terminal.println("start delay: " + currenttime);
-  while ( (currenttime - previousMillis) < delaylength) {
-    currenttime = millis();
-  }
-  previousMillis = millis();
-  terminal.println("end delay: " + currenttime);
-  terminal.println("delay diff: " + currenttime - previousMillis);
+bool BlynkUploadPart1() {
+  //CustomDelay(5000, 1);
+  Serial.println("called walkone3.." + currentDate);
+
+  Blynk.virtualWrite(V4, tankPercentage);
+  Blynk.virtualWrite(V1, distance);
+  Blynk.virtualWrite(V2, consumedLitres);
+  Blynk.virtualWrite(V5, systemUptime); 
+  Serial.println(systemUptime);
+  return true;
 }
 
-void CustomDelay (int delaylength, int iterations) {
-  unsigned long currentMillis = millis();
-  unsigned long previousMillis = 0;
-  int currentIteration = 0;
+bool BlynkUploadPart2() {
+  //CustomDelay(5000, 1);
+  Serial.println("called walkone7.." + currentDate);
 
-  terminal.println(currentMillis);
-  terminal.println(delaylength);
-  
-  while(true) {
-    if (currentMillis - previousMillis >=delaylength) {
-      currentIteration = currentIteration + 1;
-      
-      if(currentIteration == iterations){
-        terminal.println("breaking");
-        terminal.println(currentIteration);
-        terminal.println(currentMillis);
-        break;
-      }
-    }
-    currentMillis = millis();
-  }
+  Blynk.virtualWrite(V3, availableLitres);
+  Blynk.virtualWrite(V6, uptimesec);
+  Blynk.virtualWrite(V9, waterlevelat);
+
+  Blynk.virtualWrite(V7, compressorTankPercentage);
+  //Serial.println(compressorTankPercentage);
+
+  Blynk.virtualWrite(V8, cementTankPercentage);
+  return true;
 }
 
 void ExtractSensorData() {
@@ -338,7 +335,7 @@ void ExtractSensorData() {
   //Serial.println(WiFi.status());
 
   //TODO: Comment this piece in production code.
-  //simulateSensor();
+  simulateSensor();
   
   StaticJsonBuffer<1000> jsonBuffer;
   JsonObject& root = jsonBuffer.parseObject(serialPort);
@@ -419,6 +416,77 @@ void uploadtoBlynk(){
 
   //Blynk.virtualWrite(V8, cementTankPercentage);
   //Serial.println(cementTankPercentage);
+}
+
+void uploadToThingSpeak1()
+{ 
+    Serial.println("1");
+    if(isThingPart1Complete == false){
+        wifiStatus = WiFi.status();
+    
+        //Upload to Thinkspeak
+        ThingSpeak.setField(1, tankPercentage);
+        ThingSpeak.setField(2, consumedLitres);
+        ThingSpeak.setField(3, availableLitres);
+      
+        ThingSpeak.setField(4, ctankPercentage);
+        ThingSpeak.setField(5, cconsumedLitres);
+        ThingSpeak.setField(6, cavailableLitres);
+      
+        thingspeakStatus = "";
+        int httpCode = ThingSpeak.writeFields(myChannelNumber, myWriteAPIKey);
+        if (httpCode == 200) {
+          Serial.println("Channel write successful.");
+          thingspeakStatus = "Channel write successful.";
+        }
+        else {
+          Serial.println("Problem writing to channel. HTTP error code " + String(httpCode));
+          thingspeakStatus = "Problem writing to channel. HTTP error code " + String(httpCode);
+          Blynk.logEvent("email_sent", String(httpCode) + "--" + thingspeakStatus);
+        }
+      
+        thingspeakStatus = thingspeakStatus + currentDate;
+        terminal.println("Last Wifi Status.. " + wifiStatus);
+        terminal.println("Thingspeak Upload Status.. " + thingspeakStatus);
+        terminal.flush();
+  
+    isThingPart1Complete = true;
+    isThingPart2Complete = false;  
+  }
+}
+
+void uploadToThingSpeak2()
+{ 
+  Serial.println("2");
+  if(isThingPart2Complete == false){
+      Serial.println("Upload Call from Thing2 -- " + currentDate);
+
+      wifiStatus = wifiStatus + WiFi.status();
+      
+      //Upload to Thinkspeak
+      ThingSpeak.setField(7, tankPercentage);
+      ThingSpeak.setField(8, consumedLitres);
+    
+      thingspeakStatus = "";
+      int httpCode = ThingSpeak.writeFields(myChannelNumber, myWriteAPIKey);
+      if (httpCode == 200) {
+        Serial.println("Channel write successful.");
+        thingspeakStatus = "Channel write successful.";
+      }
+      else {
+        Serial.println("Problem writing to channel. HTTP error code " + String(httpCode));
+        thingspeakStatus = "Problem writing to channel. HTTP error code " + String(httpCode);
+        Blynk.logEvent("attentionrequired", thingspeakStatus + currentDate);
+      }
+    
+      thingspeakStatus = thingspeakStatus + currentDate;
+      terminal.println("Thingspeak Upload Status.. " + thingspeakStatus);
+      terminal.println("Last WIFI Status.. " + wifiStatus);
+      terminal.flush();
+  
+     isThingPart1Complete = false;
+     isThingPart2Complete = true;  
+  }
 }
 
 void uploadToThingSpeak()
@@ -504,7 +572,6 @@ BLYNK_WRITE(V50)
     terminal.println("Setup Configuration.." + setupConfiguration);
     terminal.println("---END of MSG--");
   } else if (String("dev") == param.asStr()) {  
-    CustomDelay(1000, 1);
     simulateSensor();
     terminal.println("---END of MSG-- Completed Run.." + currentDate);
   } else if (String("ssheet") == param.asStr()) { 
