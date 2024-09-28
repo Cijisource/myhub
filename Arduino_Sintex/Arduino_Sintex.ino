@@ -1,5 +1,5 @@
-#define strigger 8
-#define secho 9
+#define strigger 7
+#define secho 6
 
 #include <SoftwareSerial.h>
 #include <ArduinoJson.h>
@@ -25,7 +25,7 @@ void setup() {
   
   pinMode(strigger, OUTPUT);
   pinMode(secho, INPUT);
-  ssensorrestorecalibration = scalibrationvalue; 
+  //ssensorrestorecalibration = scalibrationvalue; 
    
   Serial.println("----------------SETUP COMPLETED--------------------------");
 }
@@ -34,14 +34,17 @@ void loop() {
   // put your main code here, to run repeatedly:
   long uptimemls = millis();
   long uptimesec = uptimemls/1000;
-  
+
+  //Serial.println("Aurdino Uptime");
+  //Serial.println(uptimesec);
   StaticJsonBuffer<1000> jsonBuffer;
   JsonObject& root = jsonBuffer.createObject();
   root["ArduinoUptime"] = uptimesec;
   
   checkWaterLevelInSintexTank(root);
   root.printTo(serialPort);
-  
+
+  root.prettyPrintTo(Serial);  
   delay(1000);
 }
 
