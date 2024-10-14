@@ -1,3 +1,5 @@
+#include <ESP8266HTTPClient.h>
+
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "pool.ntp.org");
 
@@ -153,6 +155,7 @@ void terminalCall(String param) {
     terminal.println("sconfig -- Setup Configuration");
     terminal.println("ssheet -- Send Data to GoogleSheet");
     terminal.println("dev -- Run silent programs as per developer {Developer Usage Only}s");
+    terminal.println("resetwifi -- Erases previously connected wifi and reboots the Wifi module in AP mode.");
     terminal.println("---END of MSG--");
   }
   else {

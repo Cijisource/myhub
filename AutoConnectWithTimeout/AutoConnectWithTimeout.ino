@@ -11,6 +11,7 @@
 #include <SoftwareSerial.h>
 #include <NTPClient.h>
 #include "ThingSpeak.h"
+
 #include "classfile.hpp"
 #include <ArduinoJson.h>
 
@@ -22,7 +23,7 @@ BlynkTimer extractSensorTimer;
 BlynkTimer systemTimer;
 BlynkTimer wifiChecker;
 
-//WiFiClient client;
+WiFiClient client;
 String str;
 
 bool isSTankLowEmailSent = true;
@@ -52,7 +53,7 @@ void setup() {
   setupConfiguration = DEVICE_NAME "--" DEVICE_SOFTWARE;
   
   //WiFiManager setup..
-  setupWifiManager();
+  setupWifiManager(0);
 
   setupDateTime();
   setupTimers();
@@ -262,28 +263,35 @@ BLYNK_CONNECTED(){
   Blynk.logEvent("forinformation", String("Successfully Connected") + DEVICE_NAME);
 }
 
-BLYNK_WRITE(V0) {
-  compressorTankPercentage = param.asInt();
-}
-
-BLYNK_WRITE(V10) {
-  cementTankPercentage = param.asInt();
-}
+//BLYNK_WRITE(V0) {
+//  compressorTankPercentage = param.asInt();
+//}
+//
+//BLYNK_WRITE(V10) {
+//  cementTankPercentage = param.asInt();
+//}
 
 // You can send commands from Terminal to your hardware. Just use
 // the same Virtual Pin as your Terminal Widget
 BLYNK_WRITE(V50)
 {  
   terminalCall(param.asStr());
+
+  if (String("resetwifi") == param.asStr()) {
+    setupWifiManager(1);
+  }
 }
 
-void setupWifiManager() {
+void setupWifiManager(int isReset) {
   //WiFiManager
   //Local intialization. Once its business is done, there is no need to keep it around
   WiFiManager wifiManager;
-  //reset settings - for testing
-  //wifiManager.resetSettings();
 
+  if(isReset == 1) {
+    //reset settings - for testing
+    wifiManager.resetSettings();
+  }
+  
   //sets timeout until configuration portal gets turned off
   //useful to make it all retry or go to sleep
   //in seconds
@@ -344,4 +352,5 @@ void loop() {
   //wifiChecker.run();
 
   ExtractSensorData();
+  //http();
 }
