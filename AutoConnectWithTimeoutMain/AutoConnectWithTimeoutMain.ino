@@ -3,7 +3,7 @@
 #define BLYNK_TEMPLATE_NAME "Main Tank Monitor"
 #define BLYNK_AUTH_TOKEN "w-R8a_nmrqsPSdWhD7WFTKn02G6ptVtu"
 #define DEVICE_NAME "Main Tank Monitor"
-#define DEVICE_SOFTWARE "ESP_MAIN_16_10_2024{DD_MM_YYYY}"
+#define DEVICE_SOFTWARE "ESP_MAINTANK_16_10_2024{DD_MM_YYYY}"
 #define BLYNK_FIRMWARE_VERSION "1.0.0"
 
 #include <WiFiManager.h> // https://github.com/tzapu/WiFiManager
@@ -26,20 +26,9 @@ BlynkTimer wifiChecker;
 WiFiClient client;
 String str;
 
-bool isSTankLowEmailSent = true;
-bool isSTankFullEmailSent = true;
-bool isCTankLowEmailSent = true;
-bool isCTankFullEmailSent = true;
-
-int isSlow, isShigh;
-int isSlowNotify, isShighNotify;
-
-bool isThingPart1Complete = false;
-bool isThingPart2Complete = false;
-
-unsigned long myChannelNumber = 2362424;
-const char * myWriteAPIKey = "3RIPHUIU73AV3SIY";
-char auth[] = "WvaGbJC0GIQQH18BITsrz6H3XMxGIB7x";
+unsigned long myChannelNumber = 1184761;
+const char * myWriteAPIKey = "Z85MB42QWY3T4VGG";
+char auth[] = "3S2mjm0uyjmgkmZ_WXi3L3TgFEWz6b1E";
 
 void setup() {
   // put your setup code here, to run once:
@@ -76,7 +65,7 @@ void setupTimers() {
 
 void ExtractSensorData() {  
   //TODO: Comment this piece in production code.
-  //simulateSensor();
+  simulateSensor();
 
   if (serialPort.available()) {
       str = serialPort.readString();
@@ -112,21 +101,35 @@ void ExtractSensorData() {
       root.prettyPrintTo(receivedJson);
     
       systemUptime=root["ArduinoUptime"];
-      uptimesec = systemUptime;
-      distance=root["SSensorDistance"];
+      distance=root["SensorDistance"];
+      tankPercentage=root["TankLevelPercentage"];
+      availableLitres = root["AvailableLitres"];
+      consumedLitres = root["ConsumedLitres"];
+      waterlevelAt = root["SWaterlevelat"];
     
-      tankPercentage=root["STankLevelPercentage"];
-      //TODO - REmove 
-      tankPercentage = 55;
+      cdistance=root["CSensorDistance"];
+      ctankPercentage=root["CTankLevelPercentage"];  
+      cavailableLitres = root["CAvailableLitres"];
+      cconsumedLitres = root["CConsumedLitres"];
       
-      availableLitres = root["SAvailableLitres"];
-      consumedLitres = root["SConsumedLitres"];
-      //TODO - REmove 
-      consumedLitres = 200;
-      waterlevelat = root["SWaterLevel"];
+      cwaterlevelAt = root["CWaterlevelat"];
+      mdistance=root["MSensorDistance"];
+      mtankPercentage=root["MTankLevelPercentage"];
+      mavailableLitres = root["MAvailableLitres"];
+      mconsumedLitres = root["MConsumedLitres"];
+      mwaterlevelAt = root["MWaterlevelat"];
       
       isSlow = root["isSlow"];
       isShigh = root["isShigh"];
+      isClow = root["isClow"];
+      isChigh = root["isChigh"];
+      isMhigh = root["isMhigh"];
+      isMlow = root["isMlow"];
+    
+    //  Serial.println(isSlow);
+    //  Serial.println(isShigh);
+    //  Serial.println(isClow);
+    //  Serial.println(isChigh);
       
       //Serial.println("ArduinoUptime ");
       //Serial.print(systemUptime);

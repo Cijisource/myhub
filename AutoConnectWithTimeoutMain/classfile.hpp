@@ -3,16 +3,26 @@
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "pool.ntp.org");
 
+bool isSTankLowEmailSent = true;
+bool isSTankFullEmailSent = true;
+bool isCTankLowEmailSent = true;
+bool isCTankFullEmailSent = true;
+
+bool isThingPart1Complete = false;
+bool isThingPart2Complete = false;
+
 String currentDate;
-int tankPercentage, ctankPercentage, compressorTankPercentage, cementTankPercentage;
-float availableLitres, cavailableLitres; 
-float consumedLitres, cconsumedLitres, waterlevelat;
+long distance, cdistance, mdistance, lastDistance;;
+int tankPercentage, ctankPercentage, mtankPercentage;
+float availableLitres, cavailableLitres, mavailableLitres, waterlevelAt, cwaterlevelAt, mwaterlevelAt; 
+float consumedLitres, cconsumedLitres, mconsumedLitres;
+int isSlow, isShigh, isClow, isChigh, isMlow, isMhigh;
+int isSlowNotify, isShighNotify, isClowNotify, isChighNotify, isMlowNotify, isMhighNotify;
 
 String receivedJson = "RECEIVED JSON";
 String lastDataReceivedTime = "";
 
 long systemUptime, uptimesec;
-long distance, cdistance;
 unsigned long previousMillis = 0;
 
 String wifiStatus;
@@ -30,16 +40,27 @@ String months[12]={"January", "February", "March", "April", "May", "June", "July
 WidgetTerminal terminal(V50);
 
 void simulateSensor(){
-  char comma= ',';
-  String logValue;
-
-  tankPercentage = 1;
-  distance = 1;
-  consumedLitres = 1;
+  tankPercentage = 35;
+  distance = 43;
+  consumedLitres = 255;
   
-  availableLitres = 1;
-  logValue =(String(tankPercentage)+ comma + String(distance) + comma + String(consumedLitres));
-  terminal.println(logValue);
+  availableLitres = 566;
+  waterlevelAt = 93;
+
+  ctankPercentage= 34;
+  cdistance = 53;
+  cconsumedLitres = 2344;
+    
+  cavailableLitres = 2000;
+  cwaterlevelAt = 44;
+  mtankPercentage = 90;
+  mdistance = 98;
+  mconsumedLitres = 222;
+    
+  mavailableLitres = 433;
+  mwaterlevelAt = 23;
+  terminal.println("Simulation Over" + currentDate);
+  terminal.flush();
 }
 
 void setupDateTime() { 
