@@ -53,14 +53,11 @@ void setup() {
 }
 
 void setupTimers() {
-  // Setup a function to be called every second
+  // Setup a function to be called every second : 1000L = 1000ms = 1s
   uploadBlynkTimer.setInterval(12000L, uploadtoBlynk); // 10 second
   uploadThingSpeakTimer.setInterval(20000L, uploadToThingSpeakPart1); // (108000L -- 1.8 minutes)
   uploadThingSpeakTimer.setInterval(40000L, uploadToThingSpeakPart2); // (108000L -- 1.8 minutes)
-  
-  //extractSensorTimer.setInterval(1000L, ExtractSensorData); // 1 secoond  
   systemTimer.setInterval(1000L, setupDateTime); // 1 secoond  
-  //wifiChecker.setInterval(900000L, setupWifi); // 30 mins 900000L // 
 }
 
 void ExtractSensorData() {  
@@ -174,8 +171,6 @@ void uploadtoBlynk(){
 
 void uploadToThingSpeak()
 { 
-  wifiStatus = wifiStatus + WiFi.status();
-  
   //Upload to Thinkspeak
   ThingSpeak.setField(7, tankPercentage);
   ThingSpeak.setField(8, consumedLitres);
@@ -233,8 +228,6 @@ void uploadToThingSpeakPart2()
   Serial.println("2");
   if(isThingPart2Complete == false){
       Serial.println("Upload Call from Thing2 -- " + currentDate);
-
-      wifiStatus = wifiStatus + WiFi.status();
       
       //Upload to Thinkspeak
       ThingSpeak.setField(2, consumedLitres);
@@ -349,10 +342,9 @@ void loop() {
 
   // Initiates SimpleTimer
   uploadBlynkTimer.run(); 
-  //uploadThingSpeakTimer.run();
+  uploadThingSpeakTimer.run();
   extractSensorTimer.run();
   systemTimer.run();
-  //wifiChecker.run();
 
   ExtractSensorData();
   //http();
