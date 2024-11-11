@@ -71,30 +71,30 @@ void setupTimers() {
   
   //extractSensorTimer.setInterval(1000L, ExtractSensorData); // 1 secoond  
   systemTimer.setInterval(1000L, setupDateTime); // 1 secoond  
-  //wifiChecker.setInterval(900000L, setupWifi); // 30 mins 900000L // 
+  wifiChecker.setInterval(900000L, connectionCheck); // 30 mins 900000L // 
 }
 
 void ExtractSensorData() {  
   //TODO: Comment this piece in production code.
   //simulateSensor();
-
+  
   if (serialPort.available()) {
-      str = serialPort.readString();
+      //str = serialPort.readString();
       //Serial.print("esp: ");
       //Serial.println(str);
       serialPort.flush();
       
       StaticJsonBuffer<1000> jsonBuffer;
-      JsonObject& root = jsonBuffer.parseObject(str);
+      JsonObject& root = jsonBuffer.parseObject(serialPort);
   
-      long uptimemls = millis();
-      uptimesec = uptimemls/1000;
+      //long uptimemls = millis();
+      //uptimesec = uptimemls/1000;
     
       //Serial.println("Esp uptime ");
       //Serial.println(uptimesec);
     
-      int portStatus = serialPort.available();
-      serialPortStatus = portStatus;
+      //int portStatus = serialPort.available();
+      //serialPortStatus = portStatus;
     
       if(root == JsonObject::invalid()) 
         return;
@@ -114,15 +114,10 @@ void ExtractSensorData() {
       systemUptime=root["ArduinoUptime"];
       uptimesec = systemUptime;
       distance=root["SSensorDistance"];
-    
       tankPercentage=root["STankLevelPercentage"];
-      //TODO - REmove 
-      tankPercentage = 55;
       
       availableLitres = root["SAvailableLitres"];
       consumedLitres = root["SConsumedLitres"];
-      //TODO - REmove 
-      consumedLitres = 200;
       waterlevelat = root["SWaterLevel"];
       
       isSlow = root["isSlow"];
@@ -156,11 +151,11 @@ void uploadtoBlynk(){
   Blynk.virtualWrite(V4, tankPercentage);
   Blynk.virtualWrite(V1, distance);
   Blynk.virtualWrite(V2, consumedLitres);
-  //Blynk.virtualWrite(V3, availableLitres);
+  Blynk.virtualWrite(V3, availableLitres);
   
   //Blynk.virtualWrite(V5, systemUptime);  
   Blynk.virtualWrite(V6, uptimesec);
-  //Blynk.virtualWrite(V9, waterlevelat);
+  Blynk.virtualWrite(V9, waterlevelat);
 
   //Blynk.virtualWrite(V7, compressorTankPercentage);
   //Serial.println(compressorTankPercentage);
@@ -341,16 +336,13 @@ void connectionCheck() {
 
 void loop() {
   // put your main code here, to run repeatedly:
-  connectionCheck();
   Blynk.run();
+  ExtractSensorData();
 
   // Initiates SimpleTimer
   uploadBlynkTimer.run(); 
   //uploadThingSpeakTimer.run();
   extractSensorTimer.run();
   systemTimer.run();
-  //wifiChecker.run();
-
-  ExtractSensorData();
-  //http();
+  wifiChecker.run();
 }

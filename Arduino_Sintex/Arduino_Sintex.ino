@@ -3,7 +3,7 @@
 
 #include <SoftwareSerial.h>
 #include <ArduinoJson.h>
-SoftwareSerial serialPort(11,10); //Rx and Tx
+SoftwareSerial serialPort(9,10); //Rx and Tx
 
 float stankheight = 111; //4 feet
 float scalibrationvalue = 13;
@@ -19,8 +19,9 @@ int isChigh;
 void setup() {
   // put your setup code here, to run once:
 
-  serialPort.begin(115200);
-  Serial.begin(115200);
+  serialPort.begin(9600);
+  Serial.begin(9600);
+  //Serial.begin(115200);
   Serial.println("----------------SETUP INITIATED--------------------------");
   
   pinMode(strigger, OUTPUT);
@@ -45,7 +46,14 @@ void loop() {
   root.printTo(serialPort);
 
   root.prettyPrintTo(Serial);  
-  delay(1000);
+
+  //if (serialPort.available()) {
+    //Serial.write(serialPort.read());
+  //if (Serial.available())
+    //serialPort.write(Serial.read());
+  //}
+  
+  delay(500);
 }
 
 void checkWaterLevelInSintexTank(JsonObject& root) {
@@ -63,12 +71,12 @@ void checkWaterLevelInSintexTank(JsonObject& root) {
   duration = pulseIn(secho, HIGH);
   distance = (duration/2) / 29.1;
   
-//  Serial.println("Sintex duration");
-//  Serial.println(duration);
-//
-//  Serial.println("Sintex distance");
-//  Serial.println(distance);
-//  
+  Serial.println("Sintex duration");
+  Serial.println(duration);
+
+  Serial.println("Sintex distance");
+  Serial.println(distance);
+  
   //Blynk.virtualWrite(V1, distance);
   root["SSensorDistance"] = distance;
   
