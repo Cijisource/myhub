@@ -3,7 +3,7 @@
 #define BLYNK_TEMPLATE_NAME "Main Tank Monitor"
 #define BLYNK_AUTH_TOKEN "w-R8a_nmrqsPSdWhD7WFTKn02G6ptVtu"
 #define DEVICE_NAME "Main Tank Monitor"
-#define DEVICE_SOFTWARE "ESP_MAINTANK_16_10_2024{DD_MM_YYYY}"
+#define DEVICE_SOFTWARE "ESP_MAINTANK_01_11_2024{DD_MM_YYYY}"
 #define BLYNK_FIRMWARE_VERSION "1.0.0"
 
 #include <WiFiManager.h> // https://github.com/tzapu/WiFiManager
@@ -54,15 +54,21 @@ void setup() {
 
 void setupTimers() {
   // Setup a function to be called every second : 1000L = 1000ms = 1s
-  uploadBlynkTimer.setInterval(12000L, uploadtoBlynk); // 10 second
+  // Setup a function to be called every second
+  uploadBlynkTimer.setInterval(10000L, uploadtoBlynkPart1); // 10 second
+  uploadBlynkTimer.setInterval(25000L, uploadtoBlynkPart2); // 15 second
   uploadThingSpeakTimer.setInterval(20000L, uploadToThingSpeakPart1); // (108000L -- 1.8 minutes)
   uploadThingSpeakTimer.setInterval(40000L, uploadToThingSpeakPart2); // (108000L -- 1.8 minutes)
+  
   systemTimer.setInterval(1000L, setupDateTime); // 1 secoond  
 }
 
 void ExtractSensorData() {  
+  long uptimemls = millis();
+  uptimesec = uptimemls/1000;
+  
   //TODO: Comment this piece in production code.
-  simulateSensor();
+  //simulateSensor();
 
   if (serialPort.available()) {
       str = serialPort.readString();
@@ -72,10 +78,7 @@ void ExtractSensorData() {
       
       StaticJsonBuffer<1000> jsonBuffer;
       JsonObject& root = jsonBuffer.parseObject(str);
-  
-      long uptimemls = millis();
-      uptimesec = uptimemls/1000;
-    
+      
       //Serial.println("Esp uptime ");
       //Serial.println(uptimesec);
     
@@ -169,6 +172,61 @@ void uploadtoBlynk(){
   //Serial.println(cementTankPercentage);
 }
 
+void uploadtoBlynkPart1(){
+  if(isBlynkPart1Complete == false){
+
+    blynkStatus = "";
+    
+    //Compressor
+    Blynk.virtualWrite(V0, tankPercentage);
+    Blynk.virtualWrite(V1, distance);
+    Blynk.virtualWrite(V4, waterlevelAt);
+
+    //Cement
+    Blynk.virtualWrite(V10, ctankPercentage);
+    Blynk.virtualWrite(V11, cdistance);
+    Blynk.virtualWrite(V14, cwaterlevelAt);
+    
+    //Mini
+    Blynk.virtualWrite(V15, mtankPercentage);
+    Blynk.virtualWrite(V16, mdistance);
+    Blynk.virtualWrite(V19, mwaterlevelAt);
+
+    blynkStatus = "Blynk Upload Complete.. part1" + currentDate;
+    terminal.println(blynkStatus);
+
+    isBlynkPart1Complete = true;
+    isBlynkPart2Complete = false;
+   }
+}
+
+void uploadtoBlynkPart2(){
+  if(isBlynkPart1Complete == true && isBlynkPart2Complete == false){
+    blynkStatus = "";
+
+    //Compressor
+    Blynk.virtualWrite(V2, consumedLitres);
+    Blynk.virtualWrite(V3, availableLitres);
+
+    //Mini
+    Blynk.virtualWrite(V17, mconsumedLitres);
+    Blynk.virtualWrite(V18, mavailableLitres);
+
+    //Cement
+    Blynk.virtualWrite(V12, cconsumedLitres);
+    Blynk.virtualWrite(V13, cavailableLitres);
+
+    Blynk.virtualWrite(V6, uptimesec);
+    Blynk.virtualWrite(V5, currentDate);  
+
+    blynkStatus = "Blynk Upload Complete.. Part2 " + currentDate;
+    terminal.println(blynkStatus);
+
+    isBlynkPart1Complete = false;
+    isBlynkPart2Complete = true;
+   }
+}
+
 void uploadToThingSpeak()
 { 
   //Upload to Thinkspeak
@@ -189,7 +247,6 @@ void uploadToThingSpeak()
 
   thingspeakStatus = thingspeakStatus + currentDate;
   terminal.println("Thingspeak Upload Status.. " + thingspeakStatus);
-  terminal.println("Last WIFI Status.. " + wifiStatus);
   terminal.flush();
 }
 
@@ -214,7 +271,6 @@ void uploadToThingSpeakPart1()
         }
       
         thingspeakStatus = thingspeakStatus + currentDate;
-        terminal.println("Last Wifi Status.. " + wifiStatus);
         terminal.println("Thingspeak Upload Status.. " + thingspeakStatus);
         terminal.flush();
   
@@ -246,7 +302,6 @@ void uploadToThingSpeakPart2()
     
       thingspeakStatus = thingspeakStatus + currentDate;
       terminal.println("Thingspeak Upload Status.. " + thingspeakStatus);
-      terminal.println("Last WIFI Status.. " + wifiStatus);
       terminal.flush();
   
      isThingPart1Complete = false;
@@ -337,15 +392,15 @@ void connectionCheck() {
 
 void loop() {
   // put your main code here, to run repeatedly:
-  connectionCheck();
   Blynk.run();
+  //connectionCheck();
 
   // Initiates SimpleTimer
-  uploadBlynkTimer.run(); 
-  uploadThingSpeakTimer.run();
   extractSensorTimer.run();
   systemTimer.run();
-
+  uploadBlynkTimer.run(); 
+  uploadThingSpeakTimer.run();
+  
   ExtractSensorData();
   //http();
 }

@@ -11,6 +11,9 @@ bool isCTankFullEmailSent = true;
 bool isThingPart1Complete = false;
 bool isThingPart2Complete = false;
 
+bool isBlynkPart1Complete = false;
+bool isBlynkPart2Complete = false;
+
 String currentDate;
 long distance, cdistance, mdistance, lastDistance;;
 int tankPercentage, ctankPercentage, mtankPercentage;
@@ -26,7 +29,7 @@ long systemUptime, uptimesec;
 unsigned long previousMillis = 0;
 
 String wifiStatus;
-String thingspeakStatus = "----";
+String thingspeakStatus, blynkStatus = "----";
 String setupConfiguration = "---";
 String serialPortStatus = "----";
 String wifiChecklog = "ZeroCHeck";
