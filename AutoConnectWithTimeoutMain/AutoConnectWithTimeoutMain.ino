@@ -1,9 +1,9 @@
 #define BLYNK_PRINT Serial
-#define BLYNK_TEMPLATE_ID      "TMPL0tRLYzze"
-#define BLYNK_TEMPLATE_NAME    "Sintex Tank Monitor"
-#define BLYNK_AUTH_TOKEN       "2NMuxK5u-e8X0yB7nF0Ye459GIGH21jC"
-#define DEVICE_NAME "Sintex Tank Monitor"
-#define DEVICE_SOFTWARE "ESP_SINTEX_12_10_2024{DD_MM_YYYY}"
+#define BLYNK_TEMPLATE_ID "TMPLe3Z3HbRn"
+#define BLYNK_TEMPLATE_NAME "Main Tank Monitor"
+#define BLYNK_AUTH_TOKEN "w-R8a_nmrqsPSdWhD7WFTKn02G6ptVtu"
+#define DEVICE_NAME "Main Tank Monitor"
+#define DEVICE_SOFTWARE "ESP_MAINTANK_01_11_2024{DD_MM_YYYY}"
 #define BLYNK_FIRMWARE_VERSION "1.0.0"
 
 #include <WiFiManager.h> // https://github.com/tzapu/WiFiManager
@@ -26,20 +26,9 @@ BlynkTimer wifiChecker;
 WiFiClient client;
 String str;
 
-bool isSTankLowEmailSent = true;
-bool isSTankFullEmailSent = true;
-bool isCTankLowEmailSent = true;
-bool isCTankFullEmailSent = true;
-
-int isSlow, isShigh;
-int isSlowNotify, isShighNotify;
-
-bool isThingPart1Complete = false;
-bool isThingPart2Complete = false;
-
-unsigned long myChannelNumber = 2362424;
-const char * myWriteAPIKey = "3RIPHUIU73AV3SIY";
-char auth[] = "WvaGbJC0GIQQH18BITsrz6H3XMxGIB7x";
+unsigned long myChannelNumber = 1184761;
+const char * myWriteAPIKey = "Z85MB42QWY3T4VGG";
+char auth[] = "3S2mjm0uyjmgkmZ_WXi3L3TgFEWz6b1E";
 
 void setup() {
   // put your setup code here, to run once:
@@ -64,37 +53,37 @@ void setup() {
 }
 
 void setupTimers() {
+  // Setup a function to be called every second : 1000L = 1000ms = 1s
   // Setup a function to be called every second
-  uploadBlynkTimer.setInterval(12000L, uploadtoBlynk); // 10 second
+  uploadBlynkTimer.setInterval(10000L, uploadtoBlynkPart1); // 10 second
+  uploadBlynkTimer.setInterval(25000L, uploadtoBlynkPart2); // 15 second
   uploadThingSpeakTimer.setInterval(20000L, uploadToThingSpeakPart1); // (108000L -- 1.8 minutes)
   uploadThingSpeakTimer.setInterval(40000L, uploadToThingSpeakPart2); // (108000L -- 1.8 minutes)
   
-  //extractSensorTimer.setInterval(1000L, ExtractSensorData); // 1 secoond  
   systemTimer.setInterval(1000L, setupDateTime); // 1 secoond  
-  wifiChecker.setInterval(900000L, connectionCheck); // 30 mins 900000L // 
 }
 
 void ExtractSensorData() {  
+  long uptimemls = millis();
+  uptimesec = uptimemls/1000;
+  
   //TODO: Comment this piece in production code.
   //simulateSensor();
-  
+
   if (serialPort.available()) {
-      //str = serialPort.readString();
+      str = serialPort.readString();
       //Serial.print("esp: ");
       //Serial.println(str);
       serialPort.flush();
       
       StaticJsonBuffer<1000> jsonBuffer;
-      JsonObject& root = jsonBuffer.parseObject(serialPort);
-  
-      //long uptimemls = millis();
-      //uptimesec = uptimemls/1000;
-    
+      JsonObject& root = jsonBuffer.parseObject(str);
+      
       //Serial.println("Esp uptime ");
       //Serial.println(uptimesec);
     
-      //int portStatus = serialPort.available();
-      //serialPortStatus = portStatus;
+      int portStatus = serialPort.available();
+      serialPortStatus = portStatus;
     
       if(root == JsonObject::invalid()) 
         return;
@@ -112,16 +101,35 @@ void ExtractSensorData() {
       root.prettyPrintTo(receivedJson);
     
       systemUptime=root["ArduinoUptime"];
-      uptimesec = systemUptime;
-      distance=root["SSensorDistance"];
-      tankPercentage=root["STankLevelPercentage"];
+      distance=root["SensorDistance"];
+      tankPercentage=root["TankLevelPercentage"];
+      availableLitres = root["AvailableLitres"];
+      consumedLitres = root["ConsumedLitres"];
+      waterlevelAt = root["SWaterlevelat"];
+    
+      cdistance=root["CSensorDistance"];
+      ctankPercentage=root["CTankLevelPercentage"];  
+      cavailableLitres = root["CAvailableLitres"];
+      cconsumedLitres = root["CConsumedLitres"];
       
-      availableLitres = root["SAvailableLitres"];
-      consumedLitres = root["SConsumedLitres"];
-      waterlevelat = root["SWaterLevel"];
+      cwaterlevelAt = root["CWaterlevelat"];
+      mdistance=root["MSensorDistance"];
+      mtankPercentage=root["MTankLevelPercentage"];
+      mavailableLitres = root["MAvailableLitres"];
+      mconsumedLitres = root["MConsumedLitres"];
+      mwaterlevelAt = root["MWaterlevelat"];
       
       isSlow = root["isSlow"];
       isShigh = root["isShigh"];
+      isClow = root["isClow"];
+      isChigh = root["isChigh"];
+      isMhigh = root["isMhigh"];
+      isMlow = root["isMlow"];
+    
+    //  Serial.println(isSlow);
+    //  Serial.println(isShigh);
+    //  Serial.println(isClow);
+    //  Serial.println(isChigh);
       
       //Serial.println("ArduinoUptime ");
       //Serial.print(systemUptime);
@@ -151,11 +159,11 @@ void uploadtoBlynk(){
   Blynk.virtualWrite(V4, tankPercentage);
   Blynk.virtualWrite(V1, distance);
   Blynk.virtualWrite(V2, consumedLitres);
-  Blynk.virtualWrite(V3, availableLitres);
+  //Blynk.virtualWrite(V3, availableLitres);
   
   //Blynk.virtualWrite(V5, systemUptime);  
   Blynk.virtualWrite(V6, uptimesec);
-  Blynk.virtualWrite(V9, waterlevelat);
+  //Blynk.virtualWrite(V9, waterlevelat);
 
   //Blynk.virtualWrite(V7, compressorTankPercentage);
   //Serial.println(compressorTankPercentage);
@@ -164,10 +172,63 @@ void uploadtoBlynk(){
   //Serial.println(cementTankPercentage);
 }
 
+void uploadtoBlynkPart1(){
+  if(isBlynkPart1Complete == false){
+
+    blynkStatus = "";
+    
+    //Compressor
+    Blynk.virtualWrite(V0, tankPercentage);
+    Blynk.virtualWrite(V1, distance);
+    Blynk.virtualWrite(V4, waterlevelAt);
+
+    //Cement
+    Blynk.virtualWrite(V10, ctankPercentage);
+    Blynk.virtualWrite(V11, cdistance);
+    Blynk.virtualWrite(V14, cwaterlevelAt);
+    
+    //Mini
+    Blynk.virtualWrite(V15, mtankPercentage);
+    Blynk.virtualWrite(V16, mdistance);
+    Blynk.virtualWrite(V19, mwaterlevelAt);
+
+    blynkStatus = "Blynk Upload Complete.. part1" + currentDate;
+    terminal.println(blynkStatus);
+
+    isBlynkPart1Complete = true;
+    isBlynkPart2Complete = false;
+   }
+}
+
+void uploadtoBlynkPart2(){
+  if(isBlynkPart1Complete == true && isBlynkPart2Complete == false){
+    blynkStatus = "";
+
+    //Compressor
+    Blynk.virtualWrite(V2, consumedLitres);
+    Blynk.virtualWrite(V3, availableLitres);
+
+    //Mini
+    Blynk.virtualWrite(V17, mconsumedLitres);
+    Blynk.virtualWrite(V18, mavailableLitres);
+
+    //Cement
+    Blynk.virtualWrite(V12, cconsumedLitres);
+    Blynk.virtualWrite(V13, cavailableLitres);
+
+    Blynk.virtualWrite(V6, uptimesec);
+    Blynk.virtualWrite(V5, currentDate);  
+
+    blynkStatus = "Blynk Upload Complete.. Part2 " + currentDate;
+    terminal.println(blynkStatus);
+
+    isBlynkPart1Complete = false;
+    isBlynkPart2Complete = true;
+   }
+}
+
 void uploadToThingSpeak()
 { 
-  wifiStatus = wifiStatus + WiFi.status();
-  
   //Upload to Thinkspeak
   ThingSpeak.setField(7, tankPercentage);
   ThingSpeak.setField(8, consumedLitres);
@@ -186,7 +247,6 @@ void uploadToThingSpeak()
 
   thingspeakStatus = thingspeakStatus + currentDate;
   terminal.println("Thingspeak Upload Status.. " + thingspeakStatus);
-  terminal.println("Last WIFI Status.. " + wifiStatus);
   terminal.flush();
 }
 
@@ -211,7 +271,6 @@ void uploadToThingSpeakPart1()
         }
       
         thingspeakStatus = thingspeakStatus + currentDate;
-        terminal.println("Last Wifi Status.. " + wifiStatus);
         terminal.println("Thingspeak Upload Status.. " + thingspeakStatus);
         terminal.flush();
   
@@ -225,8 +284,6 @@ void uploadToThingSpeakPart2()
   Serial.println("2");
   if(isThingPart2Complete == false){
       Serial.println("Upload Call from Thing2 -- " + currentDate);
-
-      wifiStatus = wifiStatus + WiFi.status();
       
       //Upload to Thinkspeak
       ThingSpeak.setField(2, consumedLitres);
@@ -245,7 +302,6 @@ void uploadToThingSpeakPart2()
     
       thingspeakStatus = thingspeakStatus + currentDate;
       terminal.println("Thingspeak Upload Status.. " + thingspeakStatus);
-      terminal.println("Last WIFI Status.. " + wifiStatus);
       terminal.flush();
   
      isThingPart1Complete = false;
@@ -296,7 +352,7 @@ void setupWifiManager(int isReset) {
   //if it does not connect it starts an access point with the specified name
   //here  "AutoConnectAP"
   //and goes into a blocking loop awaiting configuration
-  if (!wifiManager.autoConnect("Sintex_AutoConnectAP")) {
+  if (!wifiManager.autoConnect("MainTank_AutoConnectAP")) {
     Serial.println("failed to connect and hit timeout");
     delay(300);
     //reset and try again, or maybe put it to deep sleep
@@ -337,12 +393,14 @@ void connectionCheck() {
 void loop() {
   // put your main code here, to run repeatedly:
   Blynk.run();
-  ExtractSensorData();
+  //connectionCheck();
 
   // Initiates SimpleTimer
-  uploadBlynkTimer.run(); 
-  //uploadThingSpeakTimer.run();
   extractSensorTimer.run();
   systemTimer.run();
-  wifiChecker.run();
+  uploadBlynkTimer.run(); 
+  uploadThingSpeakTimer.run();
+  
+  ExtractSensorData();
+  //http();
 }
