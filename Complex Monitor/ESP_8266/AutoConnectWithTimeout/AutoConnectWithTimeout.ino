@@ -341,7 +341,7 @@ void loop() {
 
   // Initiates SimpleTimer
   uploadBlynkTimer.run(); 
-  //uploadThingSpeakTimer.run();
+  uploadThingSpeakTimer.run();
   extractSensorTimer.run();
   systemTimer.run();
   wifiChecker.run();
