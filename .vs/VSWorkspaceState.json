@@ -2,7 +2,11 @@
   "ExpandedNodes": [
     "",
     "\\Arduino_Sintex",
-    "\\AutoConnectWithTimeout"
+    "\\AutoConnectWithTimeout",
+    "\\Complex Monitor",
+    "\\Complex Monitor\\ESP_8266",
+    "\\Complex Monitor\\ESP_8266\\AutoConnectWithTimeout"
   ],
+  "SelectedNode": "\\Complex Monitor\\ESP_8266\\AutoConnectWithTimeout\\AutoConnectWithTimeout.ino",
   "PreviewInSolutionExplorer": false
 }
