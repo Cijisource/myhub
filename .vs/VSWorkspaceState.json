@@ -1,7 +1,9 @@
 {
   "ExpandedNodes": [
-    ""
+    "",
+    "\\Complex Monitor",
+    "\\Complex Monitor\\ESP_8266"
   ],
-  "SelectedNode": "\\.gitignore",
+  "SelectedNode": "\\Complex Monitor\\ESP_8266",
   "PreviewInSolutionExplorer": false
 }
