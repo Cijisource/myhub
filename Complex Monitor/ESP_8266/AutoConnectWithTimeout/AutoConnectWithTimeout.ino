@@ -19,7 +19,6 @@ SoftwareSerial serialPort(D1,D2); //Rx and Tx
 
 BlynkTimer uploadBlynkTimer;
 BlynkTimer uploadThingSpeakTimer;
-BlynkTimer extractSensorTimer;
 BlynkTimer systemTimer;
 BlynkTimer wifiChecker;
 
@@ -342,7 +341,6 @@ void loop() {
   // Initiates SimpleTimer
   uploadBlynkTimer.run(); 
   uploadThingSpeakTimer.run();
-  extractSensorTimer.run();
   systemTimer.run();
   wifiChecker.run();
 }

@@ -83,9 +83,13 @@ void loop() {
   
 //  if(serialPort.available()>0)
 //  {
-    root.printTo(serialPort);
+    //root.printTo(serialPort);
+
+    //root.prettyPrintTo(Serial);  
 //  }
-  delay(1000);
+
+    delay(50);
+    Serial.println(".");
 }
 
 void checkWaterLevelInCompressorTank(JsonObject& root) {
@@ -253,7 +257,7 @@ void checkWaterLevelInCompressorTank(JsonObject& root) {
 }
 
 void checkWaterLevelInMiniTank(JsonObject& root) {
-  long duration, distance;
+  long duration = 0, distance = 0;
   int tanklevelpercentage = 0;
 
   digitalWrite(mtrigger, LOW);  
@@ -264,7 +268,7 @@ void checkWaterLevelInMiniTank(JsonObject& root) {
   
   digitalWrite(mtrigger, LOW);
   duration = pulseIn(mecho, HIGH);
-
+  
   //simulator.
   //duration = 500;
   distance = (duration/2) / 29.1;

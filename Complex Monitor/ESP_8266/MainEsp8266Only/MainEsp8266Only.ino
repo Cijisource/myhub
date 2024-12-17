@@ -3,7 +3,7 @@
 #define BLYNK_TEMPLATE_NAME "Main Tank Monitor"
 #define BLYNK_AUTH_TOKEN "w-R8a_nmrqsPSdWhD7WFTKn02G6ptVtu"
 #define DEVICE_NAME "Main Tank Monitor"
-#define DEVICE_SOFTWARE "ESP_MAINTANK_12_12_2024{DD_MM_YYYY}"
+#define DEVICE_SOFTWARE "ESP_MAINTANK_12_15_2024{DD_MM_YYYY}"
 #define BLYNK_FIRMWARE_VERSION "2.0.0"
 
 #include <WiFiManager.h> // https://github.com/tzapu/WiFiManager
@@ -35,6 +35,12 @@ char auth[] = "3S2mjm0uyjmgkmZ_WXi3L3TgFEWz6b1E";
 const int strigger = 12;
 const int secho = 14;
 
+const int ctrigger = 4;
+const int cecho = 5;
+
+const int mtrigger = 13;
+const int mecho = 15;
+
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
@@ -55,9 +61,18 @@ void setup() {
   //Configure and connect blynk by extracting SSID and Password from WIFI Manager..
   blynkConnect();
 
+  //Initilize Thing speak..
+  ThingSpeak.begin(client);
+  delay(200);
+
   pinMode(strigger, OUTPUT); // Sets the trigPin as an Output
   pinMode(secho, INPUT); // Sets the echoPin as an Input
 
+  pinMode(ctrigger, OUTPUT); // Sets the trigPin as an Output
+  pinMode(cecho, INPUT); // Sets the echoPin as an Input
+
+  pinMode(mtrigger, OUTPUT); // Sets the trigPin as an Output
+  pinMode(mecho, INPUT); // Sets the echoPin as an Input
 
   Serial.println("----------------SETUP COMPLETED--------------------------");
 }
@@ -67,11 +82,13 @@ void setupTimers() {
   // Setup a function to be called every second
   uploadBlynkTimer.setInterval(10000L, uploadtoBlynkPart1); // 10 second
   uploadBlynkTimer.setInterval(25000L, uploadtoBlynkPart2); // 15 second
-  //uploadThingSpeakTimer.setInterval(20000L, uploadToThingSpeakPart1); // (108000L -- 1.8 minutes)
-  //uploadThingSpeakTimer.setInterval(40000L, uploadToThingSpeakPart2); // (108000L -- 1.8 minutes)
+  uploadThingSpeakTimer.setInterval(20000L, uploadToThingSpeakPart1); // (108000L -- 1.8 minutes)
+  uploadThingSpeakTimer.setInterval(40000L, uploadToThingSpeakPart2); // (108000L -- 1.8 minutes)
   
   systemTimer.setInterval(1000L, setupDateTime); // 1 secoond  
   wifiChecker.setInterval(1000L, checkWaterLevelInCompressorTank); // 30 mins 900000L // 
+  wifiChecker.setInterval(1500L, checkWaterLevelInCementTank); // 30 mins 900000L // 
+  wifiChecker.setInterval(2200L, checkWaterLevelInMiniTank); // 30 mins 900000L // 
 }
 
 void checkWaterLevelInCompressorTank() {
@@ -151,7 +168,175 @@ void checkWaterLevelInCompressorTank() {
   root["SWaterlevelat"] = waterlevelat/30.48;
   //Blynk.virtualWrite(V5, uptimesec);
 
-  root.prettyPrintTo(Serial);
+  //root.prettyPrintTo(Serial);
+}
+
+void checkWaterLevelInCementTank() {
+  long duration, distance;
+  int tanklevelpercentage = 0;
+
+  digitalWrite(ctrigger, LOW);  
+  delayMicroseconds(2); 
+  
+  digitalWrite(ctrigger, HIGH);
+  delayMicroseconds(10); 
+  
+  digitalWrite(ctrigger, LOW);
+  duration = pulseIn(cecho, HIGH);
+  distance = (duration/2) / 29.1;
+
+  //simulator.
+  //distance = 80;
+  
+  Serial.println("cement duration");
+  Serial.println(duration);
+
+  Serial.println("cement distance");
+  Serial.println(distance);
+  
+  //Blynk.virtualWrite(V1, distance);
+  root["CSensorDistance"] = distance;
+  
+  ccalibrationvalue = csensorrestorecalibration;
+  if(distance > (ctankheight + ccalibrationvalue)) {
+//    Serial.println(distance);
+    distance = ctankheight;
+    ccalibrationvalue = 0;
+  } 
+  float availablelitres = measureWater(distance, ccalibrationvalue, ctankheight, ctankwidth, ctanklength);
+  float consumedlitres = consumedWater(distance, ccalibrationvalue, ctankheight, ctankwidth, ctanklength);
+
+  //Blynk.virtualWrite(V13, availablelitres);
+  root["CAvailableLitres"] = availablelitres;
+
+  //Blynk.virtualWrite(V12, consumedlitres);
+  root["CConsumedLitres"] = consumedlitres;
+
+  int waterlevelat = 0;
+  if(distance > 0) {
+    waterlevelat = ctankheight + ccalibrationvalue - distance;
+//    Serial.println(ccalibrationvalue);
+//    Serial.println("calibration value printed above");
+  }
+//  Serial.println("CWaterlevelat");
+//  Serial.println(waterlevelat);
+  tanklevelpercentage = waterlevelat / ctankheight * 100;
+//  Serial.println("cement");
+//  Serial.println(ctankheight);
+//  Serial.println(waterlevelat);
+//  Serial.println(tanklevelpercentage);
+//  if(tanklevelpercentage > 100)  {
+//    tanklevelpercentage = 100;
+//  }
+  if(tanklevelpercentage < 0)  {
+    tanklevelpercentage = 0;
+  }
+    
+  if(tanklevelpercentage < 30 && tanklevelpercentage > 10) {
+    isClow = 1;
+  }
+  else if(tanklevelpercentage > 30) {
+    isClow = 0;
+  }
+  
+  if(tanklevelpercentage > 95) {
+    isChigh = 1;
+  }
+  else if(tanklevelpercentage < 95 && tanklevelpercentage > 10) {
+    isChigh = 0;
+  }
+  
+  //Blynk.virtualWrite(V0, tanklevelpercentage);
+  root["isClow"] = isClow;
+  root["isChigh"] = isChigh;
+    
+  root["CTankLevelPercentage"] = tanklevelpercentage;
+  root["CWaterlevelat"] = waterlevelat/30.48;
+  //Blynk.virtualWrite(V5, uptimesec);
+}
+
+void checkWaterLevelInMiniTank() {
+  long duration = 0, distance = 0;
+  int tanklevelpercentage = 0;
+
+  digitalWrite(mtrigger, LOW);  
+  delayMicroseconds(2); 
+  
+  digitalWrite(mtrigger, HIGH);
+  delayMicroseconds(10); 
+  
+  digitalWrite(mtrigger, LOW);
+  duration = pulseIn(mecho, HIGH);
+  
+  //simulator.
+  //duration = 500;
+  distance = (duration/2) / 29.1;
+ 
+  Serial.println("Mini duration");
+  Serial.println(duration);
+
+  Serial.println("Mini distance");
+  Serial.println(distance);
+  
+  //Blynk.virtualWrite(V1, distance);
+  root["MSensorDistance"] = distance;
+  
+  mcalibrationvalue = msensorrestorecalibration;
+  if(distance > (mtankheight + mcalibrationvalue)) {
+//    Serial.println(distance);
+    distance = mtankheight;
+    mcalibrationvalue = 0;
+  } 
+  float availablelitres = measureWater(distance, mcalibrationvalue, mtankheight, mtankwidth, mtanklength);
+  float consumedlitres = consumedWater(distance, mcalibrationvalue, mtankheight, mtankwidth, mtanklength);
+
+  //Blynk.virtualWrite(V13, availablelitres);
+  root["MAvailableLitres"] = availablelitres;
+
+  //Blynk.virtualWrite(V12, consumedlitres);
+  root["MConsumedLitres"] = consumedlitres;
+
+  int waterlevelat = 0;
+  if(distance > 0) {
+    waterlevelat = mtankheight + mcalibrationvalue - distance;
+//    Serial.println(mcalibrationvalue);
+//    Serial.println("calibration value printed above");
+  }
+//  Serial.println("mWaterlevelat");
+//  Serial.println(waterlevelat);
+  tanklevelpercentage = waterlevelat / mtankheight * 100;
+//  Serial.println("cement");
+//  Serial.println(ctankheight);
+//  Serial.println(waterlevelat);
+//  Serial.println(tanklevelpercentage);
+//  if(tanklevelpercentage > 100)  {
+//    tanklevelpercentage = 100;
+//  }
+  if(tanklevelpercentage < 0)  {
+    tanklevelpercentage = 0;
+  }
+    
+  if(tanklevelpercentage < 30 && tanklevelpercentage > 10) {
+    isMlow = 1;
+  }
+  else if(tanklevelpercentage > 30) {
+    isMlow = 0;
+  }
+  
+  if(tanklevelpercentage > 95) {
+    isMhigh = 1;
+  }
+  else if(tanklevelpercentage < 95 && tanklevelpercentage > 10) {
+    isMhigh = 0;
+  }
+  
+  //Blynk.virtualWrite(V0, tanklevelpercentage);
+  root["isMlow"] = isMlow;
+  root["isMhigh"] = isMhigh;
+    
+  root["MTankLevelPercentage"] = tanklevelpercentage;
+  root["MWaterlevelat"] = waterlevelat/30.48;
+  //Blynk.virtualWrite(V5, uptimesec);
 }
 
 void ExtractSensorData() {  
@@ -325,6 +510,7 @@ void uploadtoBlynkPart2(){
 
 void uploadToThingSpeak()
 { 
+  ExtractSensorData();
   //Upload to Thinkspeak
   ThingSpeak.setField(7, tankPercentage);
   ThingSpeak.setField(8, consumedLitres);
@@ -348,11 +534,25 @@ void uploadToThingSpeak()
 
 void uploadToThingSpeakPart1()
 { 
+    ExtractSensorData();
     Serial.println("1");
     if(isThingPart1Complete == false){    
         //Upload to Thinkspeak
-        tankPercentage = 50;
+        //tankPercentage = 50;
+        //consumedLitres = 1000;
+        //availableLitres = 2000;
+
+        //ctankPercentage = 90;
+        //cconsumedLitres = 500;
+        //cavailableLitres = 2500;
+        
         ThingSpeak.setField(1, tankPercentage);
+        ThingSpeak.setField(2, consumedLitres);
+        ThingSpeak.setField(3, availableLitres);
+      
+        ThingSpeak.setField(4, ctankPercentage);
+        ThingSpeak.setField(5, cconsumedLitres);
+        ThingSpeak.setField(6, cavailableLitres);
       
         thingspeakStatus = "";
         int httpCode = ThingSpeak.writeFields(myChannelNumber, myWriteAPIKey);
@@ -377,6 +577,7 @@ void uploadToThingSpeakPart1()
 
 void uploadToThingSpeakPart2()
 { 
+  ExtractSensorData();
   Serial.println("2");
   if(isThingPart2Complete == false){
       Serial.println("Upload Call from Thing2 -- " + currentDate);
@@ -492,7 +693,7 @@ void loop() {
 
   // Initiates SimpleTimer
   systemTimer.run();
-  //uploadThingSpeakTimer.run();
+  uploadThingSpeakTimer.run();
   uploadBlynkTimer.run();
   wifiChecker.run();
 }

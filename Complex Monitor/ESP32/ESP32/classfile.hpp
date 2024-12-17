@@ -1,29 +1,5 @@
-#include <ESP8266HTTPClient.h>
-
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "pool.ntp.org");
-
-//
-long uptimemls = 0;
-float stankheight = 106; //cms
-long scalibrationvalue = 6;//33;
-long ssensorrestorecalibration;
-
-float stankwidth = 153.0; //5 feet
-float stanklength = 153.0; //4.5 feet
-
-float ctankheight = 76.2; //4 feet
-long ccalibrationvalue = 5;
-long csensorrestorecalibration;
-float ctankwidth = 132.08; //5 feet
-float ctanklength = 304.8; //4.5 feet
-
-float mtankheight = 74; //4 feet
-long mcalibrationvalue = 5;
-long msensorrestorecalibration;
-float mtankwidth = 59; //5 feet
-float mtanklength = 132; //4.5 feet
-//
 
 bool isSTankLowEmailSent = true;
 bool isSTankFullEmailSent = true;
@@ -215,32 +191,4 @@ void terminalCall(String param) {
 
   // Ensure everything is sent
   terminal.flush();
-}
-
-float measureWater(int distance, long calibrationvalue, float tankheight, float tankwidth, float tanklength) {
-  float availablelitres = 0;
-
-  int waterlevelat=0;
-  if(distance > 0) {
-    waterlevelat = tankheight + calibrationvalue - distance;
-  }
-  
-  float availablevolume = waterlevelat * tanklength * tankwidth;
-  availablelitres = availablevolume / 1000;
-  
-  if(availablelitres < 0){
-    availablelitres = 0;
-  }
-  return availablelitres;
-}
-
-float consumedWater(int distance, long calibrationvalue, float tankheight, float tankwidth, float tanklength) {
-  float consumedlitres = 0;
-  float consumedvolume = (distance - calibrationvalue) * tanklength * tankwidth;
-  consumedlitres = consumedvolume / 1000;
-
-  if(consumedlitres < 0){
-    consumedlitres = 0;
-  }
-  return consumedlitres;
 }
