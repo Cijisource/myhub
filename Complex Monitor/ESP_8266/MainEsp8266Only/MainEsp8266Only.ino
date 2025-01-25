@@ -3,8 +3,8 @@
 #define BLYNK_TEMPLATE_NAME "Main Tank Monitor"
 #define BLYNK_AUTH_TOKEN "w-R8a_nmrqsPSdWhD7WFTKn02G6ptVtu"
 #define DEVICE_NAME "Main Tank Monitor"
-#define DEVICE_SOFTWARE "ESP_MAINTANK_12_15_2024{DD_MM_YYYY}"
-#define BLYNK_FIRMWARE_VERSION "2.0.0"
+#define DEVICE_SOFTWARE "ESP_MAINTANK_01_25_2025{DD_MM_YYYY}"
+#define BLYNK_FIRMWARE_VERSION "2.0.2"
 
 #include <WiFiManager.h> // https://github.com/tzapu/WiFiManager
 #include <BlynkSimpleEsp8266.h>
