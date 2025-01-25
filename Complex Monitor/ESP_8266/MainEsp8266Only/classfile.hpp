@@ -6,7 +6,7 @@ NTPClient timeClient(ntpUDP, "pool.ntp.org");
 //
 long uptimemls = 0;
 float stankheight = 106; //cms
-long scalibrationvalue = 6;//33;
+long scalibrationvalue = 33;//33;
 long ssensorrestorecalibration;
 
 float stankwidth = 153.0; //5 feet

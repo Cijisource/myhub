@@ -86,9 +86,19 @@ void setupTimers() {
   uploadThingSpeakTimer.setInterval(40000L, uploadToThingSpeakPart2); // (108000L -- 1.8 minutes)
   
   systemTimer.setInterval(1000L, setupDateTime); // 1 secoond  
-  wifiChecker.setInterval(1000L, checkWaterLevelInCompressorTank); // 30 mins 900000L // 
-  wifiChecker.setInterval(1500L, checkWaterLevelInCementTank); // 30 mins 900000L // 
-  wifiChecker.setInterval(2200L, checkWaterLevelInMiniTank); // 30 mins 900000L // 
+  //wifiChecker.setInterval(1000L, checkWaterLevelInCompressorTank); // 30 mins 900000L // 
+  //wifiChecker.setInterval(1500L, checkWaterLevelInCementTank); // 30 mins 900000L // 
+  //wifiChecker.setInterval(2200L, checkWaterLevelInMiniTank); // 30 mins 900000L // 
+  wifiChecker.setInterval(3200L, checkWaterLevel); // 3.2 seconds..// 
+}
+
+void checkWaterLevel(){
+  checkWaterLevelInCompressorTank();
+  delayMicroseconds(20);
+  checkWaterLevelInCementTank();
+  delayMicroseconds(20);
+  checkWaterLevelInMiniTank();
+  delayMicroseconds(20);
 }
 
 void checkWaterLevelInCompressorTank() {
