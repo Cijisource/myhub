@@ -5,6 +5,9 @@
 #define mtrigger 4
 #define mecho 12
 
+#define DEVICE_SOFTWARE "UNO_MAINTANK_08_03_2025{DD_MM_YYYY}"
+#define BLYNK_FIRMWARE_VERSION "3.0.0"
+
 #include <SoftwareSerial.h>
 #include <ArduinoJson.h>
 
