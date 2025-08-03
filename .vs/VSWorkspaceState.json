@@ -1,7 +1,12 @@
 {
   "ExpandedNodes": [
-    ""
+    "",
+    "\\Complex Monitor",
+    "\\Complex Monitor\\Aurdino Chip",
+    "\\Complex Monitor\\Aurdino Chip\\Uno_Sketch_MainTank",
+    "\\Complex Monitor\\ESP_8266",
+    "\\Complex Monitor\\ESP_8266\\esp8266_aurdino_final"
   ],
-  "SelectedNode": "\\C:\\Users\\jc_vi\\Source\\Repos\\myhub",
+  "SelectedNode": "\\Complex Monitor\\Aurdino Chip\\Uno_Sketch_MainTank\\Uno_Sketch_MainTank.ino",
   "PreviewInSolutionExplorer": false
 }
