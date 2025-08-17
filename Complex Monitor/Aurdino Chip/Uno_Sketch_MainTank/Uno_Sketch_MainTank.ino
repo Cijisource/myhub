@@ -1,9 +1,9 @@
-#define strigger 7
-#define secho 6
-#define ctrigger 5
-#define cecho 13
-#define mtrigger 4
-#define mecho 12
+#define strigger 2
+#define secho 3
+#define ctrigger 4
+#define cecho 5
+#define mtrigger 6
+#define mecho 7
 
 #define DEVICE_SOFTWARE "UNO_MAINTANK_08_03_2025{DD_MM_YYYY}"
 #define BLYNK_FIRMWARE_VERSION "3.0.0"
