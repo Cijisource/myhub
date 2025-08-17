@@ -63,7 +63,7 @@ StaticJsonDocument<200> checkWaterLevelInCompressorTank(StaticJsonDocument<200> 
   distance = (duration/2) / 29.1;
 
   //Simulate..
-  distance = 135;
+  distance = 50;
   
   Serial.println("Compressor duration");
   Serial.println(duration);
@@ -145,7 +145,7 @@ StaticJsonDocument<200> checkWaterLevelInCementTank(StaticJsonDocument<200> root
   distance = (duration/2) / 29.1;
 
   //simulator.
-  distance = 80;
+  distance = 50;
   
   Serial.println("cement duration");
   Serial.println(duration);
@@ -228,9 +228,10 @@ StaticJsonDocument<200> checkWaterLevelInMiniTank(StaticJsonDocument<200> root) 
   digitalWrite(mtrigger, LOW);
   duration = pulseIn(mecho, HIGH);
   
-  //simulator.
-  duration = 500;
   distance = (duration/2) / 29.1;
+
+  //simulator.
+  distance = 50;
  
   Serial.println("Mini duration");
   Serial.println(duration);
