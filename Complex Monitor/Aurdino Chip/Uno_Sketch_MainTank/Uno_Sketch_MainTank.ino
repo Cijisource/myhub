@@ -1,5 +1,5 @@
-#define strigger 2
-#define secho 3
+#define strigger 8
+#define secho 9
 #define ctrigger 4
 #define cecho 5
 #define mtrigger 6
@@ -63,7 +63,7 @@ StaticJsonDocument<200> checkWaterLevelInCompressorTank(StaticJsonDocument<200> 
   distance = (duration/2) / 29.1;
 
   //Simulate..
-  distance = 50;
+  //distance = 50;
   
   Serial.println("Compressor duration");
   Serial.println(duration);
@@ -145,7 +145,7 @@ StaticJsonDocument<200> checkWaterLevelInCementTank(StaticJsonDocument<200> root
   distance = (duration/2) / 29.1;
 
   //simulator.
-  distance = 50;
+  //distance = 50;
   
   Serial.println("cement duration");
   Serial.println(duration);
@@ -231,8 +231,8 @@ StaticJsonDocument<200> checkWaterLevelInMiniTank(StaticJsonDocument<200> root) 
   distance = (duration/2) / 29.1;
 
   //simulator.
-  distance = 50;
- 
+  //distance = 50;
+
   Serial.println("Mini duration");
   Serial.println(duration);
 
@@ -336,7 +336,9 @@ void loop() {
   long uptimesec = millis()/1000;
   doc["aurdinouptimesec"] = uptimesec; // Add another key-value pair
   doc = checkWaterLevelInCompressorTank(doc);
+  delay(100);
   doc = checkWaterLevelInCementTank(doc);
+  delay(100);
   doc = checkWaterLevelInMiniTank(doc);
 
   serializeJson(doc, espSerial); // Send JSON over Serial
