@@ -232,7 +232,7 @@ StaticJsonDocument<200> checkWaterLevelInMiniTank(StaticJsonDocument<200> root) 
 
   //simulator.
   //distance = 50;
- 
+
   Serial.println("Mini duration");
   Serial.println(duration);
 
