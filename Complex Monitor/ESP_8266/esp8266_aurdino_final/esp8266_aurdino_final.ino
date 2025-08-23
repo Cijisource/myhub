@@ -9,6 +9,7 @@
 #include <BlynkSimpleEsp8266.h>
 #include <ArduinoJson.h>
 #include <NTPClient.h>
+#include <PubSubClient.h>
 #include "ThingSpeak.h"
 #include "classfile.hpp"
 
@@ -18,9 +19,16 @@ BlynkTimer systemTimer;
 BlynkTimer wifiChecker;
 
 WiFiClient client;
+PubSubClient mqttclient(client);
+
+long lastMsg = 0;
+char msg[50];
+int value = 0;
+bool isDataReceived = false;
 
 unsigned long myChannelNumber = 1184761;
 const char * myWriteAPIKey = "0T2KKZGK0INX3DF6";
+const char* mqtt_server = "5.196.78.28"; //test.mosquitto.org
 
 void setup() {
   Serial.begin(9600); // Initialize hardware serial for debugging
@@ -40,6 +48,10 @@ void setup() {
   //Initilize Thing speak..
   ThingSpeak.begin(client);
   delay(200);
+
+  //Initialize MQTT Broker..
+  mqttclient.setServer(mqtt_server, 1883);
+  mqttclient.setCallback(callback);
   
   Serial.println("----------------SETUP COMPLETED--------------------------");
   setupConfiguration = DEVICE_NAME "--" DEVICE_SOFTWARE;
@@ -102,7 +114,53 @@ void ExtractSensorData() {
       isChigh = doc["isChigh"];
       isMhigh = doc["isMhigh"];
       isMlow = doc["isMlow"];
+
+      isDataReceived = true;
     }
+    PublishMQTT();
+}
+
+void callback(char* topic, byte* payload, unsigned int length) {
+  Serial.print("Message arrived [");
+  Serial.print(topic);
+  Serial.print("] ");
+  for (int i = 0; i < length; i++) {
+    Serial.print((char)payload[i]);
+  }
+  Serial.println();
+
+  // Switch on the LED if an 1 was received as first character
+  if ((char)payload[0] == '1') {
+    digitalWrite(BUILTIN_LED, LOW);   // Turn the LED on (Note that LOW is the voltage level
+    // but actually the LED is on; this is because
+    // it is active low on the ESP-01)
+  } else {
+    digitalWrite(BUILTIN_LED, HIGH);  // Turn the LED off by making the voltage HIGH
+  }
+}
+
+void reconnect() {
+  // Loop until we're reconnected
+  while (!mqttclient.connected()) {
+    Serial.print("Attempting MQTT connection...");
+    // Create a random client ID
+    String clientId = "ESP8266Client-";
+    clientId += String(random(0xffff), HEX);
+    // Attempt to connect
+    if (mqttclient.connect(clientId.c_str())) {
+      Serial.println("connected");
+      // Once connected, publish an announcement...
+      mqttclient.publish("outTopic", "hello world");
+      // ... and resubscribe
+      mqttclient.subscribe("device/complexpayload/incoming");
+    } else {
+      Serial.print("failed, rc=");
+      Serial.print(mqttclient.state());
+      Serial.println(" try again in 5 seconds");
+      // Wait 5 seconds before retrying
+      delay(5000);
+    }
+  }
 }
 
 void setupWifiManager(int isReset) {
@@ -136,7 +194,7 @@ void setupWifiManager(int isReset) {
   Serial.println("connected...yeey :)");
 }
 
-void uploadtoBlynk(){
+void uploadtoBlynk(){  
   Blynk.virtualWrite(V4, tankPercentage);
   Blynk.virtualWrite(V1, distance);
   Blynk.virtualWrite(V2, consumedLitres);
@@ -155,7 +213,7 @@ void uploadtoBlynk(){
 
 void uploadtoBlynkPart1(){
   if(isBlynkPart1Complete == false){
-
+  if(isDataReceived == true) {
     blynkStatus = "";
     Blynk.virtualWrite(V6, systemUptime);
     Blynk.virtualWrite(V5, currentDate); 
@@ -174,10 +232,17 @@ void uploadtoBlynkPart1(){
     Blynk.virtualWrite(V15, mtankPercentage);
     Blynk.virtualWrite(V16, mdistance);
     Blynk.virtualWrite(V19, mwaterlevelAt);
-
-    blynkStatus = "Blynk Upload Complete.. part1" + currentDate;
+  }
+  
+    blynkStatus = "Blynk Upload Complete.. part1" + isDataReceived + currentDate;
     terminal.println(blynkStatus);
-  Serial.println(blynkStatus);
+    terminal.println(tankPercentage);
+    terminal.println(ctankPercentage);
+    terminal.println(mtankPercentage);
+    Serial.println(blynkStatus);
+
+    const char* c_style_char_array = blynkStatus.c_str(); // Convert Arduino String to const char*
+    mqttclient.publish("device/complexuploadstatus/blynk", c_style_char_array);
 
     isBlynkPart1Complete = true;
     isBlynkPart2Complete = false;
@@ -186,6 +251,7 @@ void uploadtoBlynkPart1(){
 
 void uploadtoBlynkPart2(){
   if(isBlynkPart1Complete == true && isBlynkPart2Complete == false){
+    if(isDataReceived == true) {
     blynkStatus = "";
 
     //Compressor
@@ -201,10 +267,13 @@ void uploadtoBlynkPart2(){
     Blynk.virtualWrite(V13, cavailableLitres);
 
     Blynk.virtualWrite(V6, systemUptime);
-
-    blynkStatus = "Blynk Upload Complete.. Part2 " + currentDate;
+  }
+    blynkStatus = "Blynk Upload Complete.. Part2 " + isDataReceived + currentDate;
     terminal.println(blynkStatus);
-  Serial.println(blynkStatus);
+    Serial.println(blynkStatus);
+
+    const char* c_style_char_array = blynkStatus.c_str(); // Convert Arduino String to const char*
+    mqttclient.publish("device/complexuploadstatus/blynk", c_style_char_array);
 
     isBlynkPart1Complete = false;
     isBlynkPart2Complete = true;
@@ -232,6 +301,9 @@ void uploadToThingSpeak()
   thingspeakStatus = thingspeakStatus + currentDate;
   terminal.println("Thingspeak Upload Status.. " + thingspeakStatus);
   terminal.flush();
+    
+  const char* c_style_char_array = thingspeakStatus.c_str(); // Convert Arduino String to const char*
+  mqttclient.publish("device/complexuploadstatus/thinkspeak", c_style_char_array);
 }
 
 void uploadToThingSpeakPart1()
@@ -262,6 +334,8 @@ void uploadToThingSpeakPart1()
         thingspeakStatus = thingspeakStatus + currentDate;
         terminal.println("Thingspeak Upload Status.. " + thingspeakStatus);
         terminal.flush();
+        const char* c_style_char_array = thingspeakStatus.c_str(); // Convert Arduino String to const char*
+        mqttclient.publish("device/complexuploadstatus/thinkspeak", c_style_char_array);
   
     isThingPart1Complete = true;
     isThingPart2Complete = false;  
@@ -292,6 +366,8 @@ void uploadToThingSpeakPart2()
       thingspeakStatus = thingspeakStatus + currentDate;
       terminal.println("Thingspeak Upload Status.. " + thingspeakStatus);
       terminal.flush();
+      const char* c_style_char_array = thingspeakStatus.c_str(); // Convert Arduino String to const char*
+      mqttclient.publish("device/complexuploadstatus/thinkspeak", c_style_char_array);
   
      isThingPart1Complete = false;
      isThingPart2Complete = true;  
@@ -325,6 +401,19 @@ void blynkConnect() {
   Blynk.begin(BLYNK_AUTH_TOKEN, ssid, pass);
 }
 
+void PublishMQTT(){
+  long now = millis();
+  if (now - lastMsg > 2000) {
+    lastMsg = now;
+    ++value;
+    snprintf (msg, 50, "Cijaiz hello world #%ld", value);
+    Serial.print("Publish message: ");
+    Serial.println(msg);
+    const char* c_style_char_array = receivedJson.c_str(); // Convert Arduino String to const char*
+    mqttclient.publish("device/complexpayload", c_style_char_array);
+  }
+}
+
 void loop() {
   // put your main code here, to run repeatedly:
   Blynk.run();
@@ -336,4 +425,9 @@ void loop() {
   systemTimer.run();
   uploadThingSpeakTimer.run();
   uploadBlynkTimer.run();
+
+  if (!mqttclient.connected()) {
+    reconnect();
+  }
+  mqttclient.loop();
 }

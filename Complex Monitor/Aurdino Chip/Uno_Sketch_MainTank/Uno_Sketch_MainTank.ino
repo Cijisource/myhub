@@ -1,9 +1,9 @@
-#define strigger 7
-#define secho 6
-#define ctrigger 5
-#define cecho 13
-#define mtrigger 4
-#define mecho 12
+#define strigger 8
+#define secho 9
+#define ctrigger 4
+#define cecho 5
+#define mtrigger 6
+#define mecho 7
 
 #define DEVICE_SOFTWARE "UNO_MAINTANK_08_03_2025{DD_MM_YYYY}"
 #define BLYNK_FIRMWARE_VERSION "3.0.0"
@@ -63,7 +63,7 @@ StaticJsonDocument<200> checkWaterLevelInCompressorTank(StaticJsonDocument<200> 
   distance = (duration/2) / 29.1;
 
   //Simulate..
-  distance = 135;
+  //distance = 50;
   
   Serial.println("Compressor duration");
   Serial.println(duration);
@@ -145,7 +145,7 @@ StaticJsonDocument<200> checkWaterLevelInCementTank(StaticJsonDocument<200> root
   distance = (duration/2) / 29.1;
 
   //simulator.
-  distance = 80;
+  //distance = 50;
   
   Serial.println("cement duration");
   Serial.println(duration);
@@ -228,9 +228,10 @@ StaticJsonDocument<200> checkWaterLevelInMiniTank(StaticJsonDocument<200> root) 
   digitalWrite(mtrigger, LOW);
   duration = pulseIn(mecho, HIGH);
   
-  //simulator.
-  duration = 500;
   distance = (duration/2) / 29.1;
+
+  //simulator.
+  //distance = 50;
  
   Serial.println("Mini duration");
   Serial.println(duration);
@@ -335,7 +336,9 @@ void loop() {
   long uptimesec = millis()/1000;
   doc["aurdinouptimesec"] = uptimesec; // Add another key-value pair
   doc = checkWaterLevelInCompressorTank(doc);
+  delay(100);
   doc = checkWaterLevelInCementTank(doc);
+  delay(100);
   doc = checkWaterLevelInMiniTank(doc);
 
   serializeJson(doc, espSerial); // Send JSON over Serial

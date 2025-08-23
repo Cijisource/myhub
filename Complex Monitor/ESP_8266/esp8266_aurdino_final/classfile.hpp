@@ -44,7 +44,7 @@ float consumedLitres, cconsumedLitres, mconsumedLitres;
 int isSlow, isShigh, isClow, isChigh, isMlow, isMhigh;
 int isSlowNotify, isShighNotify, isClowNotify, isChighNotify, isMlowNotify, isMhighNotify;
 
-String receivedJson = "RECEIVED JSON";
+String receivedJson = "<<RECEIVED JSON>>";
 String lastDataReceivedTime = "";
 
 long systemUptime, uptimesec;
