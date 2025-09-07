@@ -5,8 +5,8 @@
 #define mtrigger 6
 #define mecho 7
 
-#define DEVICE_SOFTWARE "UNO_MAINTANK_08_03_2025{DD_MM_YYYY}"
-#define BLYNK_FIRMWARE_VERSION "3.0.0"
+#define DEVICE_SOFTWARE "UNO_MAINTANK_09_06_2025{DD_MM_YYYY}"
+#define BLYNK_FIRMWARE_VERSION "3.0.1"
 
 #include <SoftwareSerial.h>
 #include <ArduinoJson.h>
@@ -16,6 +16,7 @@
 // Connect Arduino's SoftwareSerial RX to ESP8266's TX (through a voltage divider if necessary, as ESP8266 is 3.3V)
 SoftwareSerial espSerial(2, 13); // RX, TX pins
 
+StaticJsonDocument<200> doc; // Allocate a static JSON document
 float stankheight = 106; //cms
 long scalibrationvalue = 6;//33;
 long ssensorrestorecalibration;
@@ -331,17 +332,14 @@ float consumedWater(int distance, long calibrationvalue, float tankheight, float
 
 void loop() {
   // put your main code here, to run repeatedly:
-  StaticJsonDocument<200> doc; // Allocate a static JSON document
-
   long uptimesec = millis()/1000;
   doc["aurdinouptimesec"] = uptimesec; // Add another key-value pair
   doc = checkWaterLevelInCompressorTank(doc);
-  delay(100);
   doc = checkWaterLevelInCementTank(doc);
-  delay(100);
   doc = checkWaterLevelInMiniTank(doc);
+  doc["AurdinoFirmware"] = DEVICE_SOFTWARE;
 
   serializeJson(doc, espSerial); // Send JSON over Serial
   espSerial.println(); // Add a newline for easier parsing on ESP8266
-  delay(2000);
+  delay(400);
 }
