@@ -2,8 +2,8 @@
 #define BLYNK_TEMPLATE_NAME "Main Tank Monitor"
 #define BLYNK_AUTH_TOKEN "w-R8a_nmrqsPSdWhD7WFTKn02G6ptVtu"
 #define DEVICE_NAME "Main Tank Monitor"
-#define DEVICE_SOFTWARE "ESP_MAINTANK_08_03_2025{DD_MM_YYYY}"
-#define BLYNK_FIRMWARE_VERSION "3.0.0"
+#define DEVICE_SOFTWARE "ESP_MAINTANK_09_11_2025{DD_MM_YYYY}"
+#define BLYNK_FIRMWARE_VERSION "3.0.1"
 
 #include <WiFiManager.h> // https://github.com/tzapu/WiFiManager
 #include <BlynkSimpleEsp8266.h>
@@ -16,7 +16,9 @@
 BlynkTimer uploadBlynkTimer;
 BlynkTimer uploadThingSpeakTimer;
 BlynkTimer systemTimer;
-BlynkTimer wifiChecker;
+BlynkTimer extractSensorDataTimer;
+BlynkTimer mqttHealthProbe;
+BlynkTimer publishMqtttimer;
 
 WiFiClient client;
 PubSubClient mqttclient(client);
@@ -25,6 +27,7 @@ long lastMsg = 0;
 char msg[50];
 int value = 0;
 bool isDataReceived = false;
+StaticJsonDocument<200> doc; //Extracted Source Object.. 
 
 unsigned long myChannelNumber = 1184761;
 const char * myWriteAPIKey = "0T2KKZGK0INX3DF6";
@@ -50,8 +53,8 @@ void setup() {
   delay(200);
 
   //Initialize MQTT Broker..
-  mqttclient.setServer(mqtt_server, 1883);
-  mqttclient.setCallback(callback);
+  //mqttclient.setServer(mqtt_server, 1883);
+  //mqttclient.setCallback(callback);
   
   Serial.println("----------------SETUP COMPLETED--------------------------");
   setupConfiguration = DEVICE_NAME "--" DEVICE_SOFTWARE;
@@ -67,46 +70,75 @@ void setupTimers() {
   uploadThingSpeakTimer.setInterval(50000L, uploadToThingSpeakPart2); // (108000L -- 1.8 minutes)
   
   systemTimer.setInterval(1000L, setupDateTime); // 1 secoond  
+  extractSensorDataTimer.setInterval(400L, ExtractSensorData); // 400 milli secoond  
+  
+  mqttHealthProbe.setInterval(10000L, checkMqttConnection); // 10 secoond  
+  publishMqtttimer.setInterval(27000L, PublishMQTT); // 27 secoond  
 }
 
 void ExtractSensorData() {  
-  StaticJsonDocument<200> doc; //Extracted Source Object..  
-  
     if (Serial.available()) { // Check if data is available on the hardware serial (connected to Arduino's SoftwareSerial TX)
-      receivedJson = Serial.readStringUntil('\n'); // Read until newline character
-      Serial.print("Received on ESP8266: ");
-      Serial.println(receivedJson);
+    receivedJson = Serial.readStringUntil('\n'); // Read until newline character
+    Serial.print("Received on ESP8266: ");
+    Serial.println(receivedJson);
 
+    //Successfull serial received.
+    isDataReceived = true;
+    
     //Deserialization Logic.
     DeserializationError error = deserializeJson(doc, receivedJson);
     if (error) {
       Serial.print(F("deserializeJson() failed: "));
       Serial.println(error.f_str());
-      return;
+      terminal.println(F("deserializeJson() failed: "));
+      terminal.println(error.f_str());
     }
       // Extract data
       systemUptime = doc["aurdinouptimesec"];
     
-    //Compressor
-      distance=doc["SensorDistance"];
-      tankPercentage=doc["TankLevelPercentage"];
+      //Compressor
+      tmpdistance=doc["SensorDistance"];
+      distance = DataReceivedZeroRecoverPrevious(tmpdistance,distance,errorDetectedcompressor,errorTimecompressor,"SensorDistance");
+      
+      tmptankPercentage=doc["TankLevelPercentage"];
+      tankPercentage = DataReceivedZeroRecoverPrevious(tmptankPercentage,tankPercentage,errorDetectedcompressor,errorTimecompressor,"TankLevelPercentage");
+      
       availableLitres = doc["AvailableLitres"];
       consumedLitres = doc["ConsumedLitres"];
       waterlevelAt = doc["SWaterlevelat"];
-    
-    //Cement
-      cdistance=doc["CSensorDistance"];
-      ctankPercentage=doc["CTankLevelPercentage"];  
+
+      terminal.println("-----<<Start>>-----");
+      terminal.println("Compressor % : " + String(tankPercentage) + " or% : " + String(tmptankPercentage));
+      terminal.println("Compressor $ : " + String(distance) + " or$ : " + String(tmpdistance));
+      
+      //Cement
+      tmpcdistance=doc["CSensorDistance"];
+      cdistance = DataReceivedZeroRecoverPrevious(tmpcdistance,cdistance,errorDetectedcement,errorTimecement,"CSensorDistance");
+      
+      tmpctankPercentage=doc["CTankLevelPercentage"]; 
+      ctankPercentage = DataReceivedZeroRecoverPrevious(tmpctankPercentage,ctankPercentage,errorDetectedcement,errorTimecement,"CTankLevelPercentage");
+
       cavailableLitres = doc["CAvailableLitres"];
       cconsumedLitres = doc["CConsumedLitres"];
       cwaterlevelAt = doc["CWaterlevelat"];
+
+      terminal.println("Cement % : " + String(ctankPercentage) + " or% : " + String(tmpctankPercentage));
+      terminal.println("Cement $ : " + String(cdistance) + " or$ : " + String(tmpcdistance));
       
-    //Mini
-    mdistance=doc["MSensorDistance"];
-      mtankPercentage=doc["MTankLevelPercentage"];
+      //Mini
+      tmpmdistance=doc["MSensorDistance"];
+      mdistance = DataReceivedZeroRecoverPrevious(tmpmdistance,mdistance,errorDetectedmini,errorTimemini,"MSensorDistance");
+      
+      tmpmtankPercentage=doc["MTankLevelPercentage"];
+      mtankPercentage = DataReceivedZeroRecoverPrevious(tmpmtankPercentage,mtankPercentage,errorDetectedmini,errorTimemini,"MTankLevelPercentage");
+      
       mavailableLitres = doc["MAvailableLitres"];
       mconsumedLitres = doc["MConsumedLitres"];
       mwaterlevelAt = doc["MWaterlevelat"];
+
+      terminal.println("Mini % : " + String(mtankPercentage) + " or% : " + String(tmpmtankPercentage));
+      terminal.println("Mini $ : " + String(mdistance) + " or$ : " + String(tmpmdistance));
+      terminal.println("-----<<End>>-----");
       
       isSlow = doc["isSlow"];
       isShigh = doc["isShigh"];
@@ -114,11 +146,49 @@ void ExtractSensorData() {
       isChigh = doc["isChigh"];
       isMhigh = doc["isMhigh"];
       isMlow = doc["isMlow"];
-
-      isDataReceived = true;
     }
-    PublishMQTT();
+    else {
+      isDataReceived = false;
+      terminal.print(".");
+      Serial.print(".");
+    }
 }
+
+long DataReceivedZeroRecoverPrevious(long value, long oldvalue, bool &errorDetected, unsigned long &errorTime, String source) {
+  // Simulate error detection
+  if (CheckDataZero(value)) {
+    if (!errorDetected) {
+      errorDetected = true;
+      errorTime = millis();  // Record time of error
+      Serial.println("Error detected. Will retry in 5 seconds..." + source);
+      terminal.println("Error detected. Will retry in 5 seconds..." + source);
+      return oldvalue; // Error mode return previous value..
+    }
+  }
+  else {
+    return value;
+  }
+
+  // Retry after 5 seconds
+  if (errorDetected && millis() - errorTime >= 5000) {
+    // Attempt to update variable
+    errorDetected = false;
+    Serial.print("Variable updated after delay: ");
+    terminal.println("Variable updated after delay: ");
+    return value; //still receiving zero condition hence return the actuals.
+  }
+  else{
+    return oldvalue; //This is the recovery of old values.
+  }
+}
+
+bool CheckDataZero(long value){
+  if(value == 0){
+    return true;
+  }
+  return false;
+}
+
 
 void callback(char* topic, byte* payload, unsigned int length) {
   Serial.print("Message arrived [");
@@ -161,6 +231,13 @@ void reconnect() {
       delay(5000);
     }
   }
+}
+
+void checkMqttConnection(){
+  if (!mqttclient.connected()) {
+    reconnect();
+  }
+  mqttclient.loop();
 }
 
 void setupWifiManager(int isReset) {
@@ -212,38 +289,43 @@ void uploadtoBlynk(){
 }
 
 void uploadtoBlynkPart1(){
-  if(isBlynkPart1Complete == false){
-  if(isDataReceived == true) {
-    blynkStatus = "";
-    Blynk.virtualWrite(V6, systemUptime);
-    Blynk.virtualWrite(V5, currentDate); 
-    
-    //Compressor
-    Blynk.virtualWrite(V0, tankPercentage);
-    Blynk.virtualWrite(V1, distance);
-    Blynk.virtualWrite(V4, waterlevelAt);
-
-    //Cement
-    Blynk.virtualWrite(V10, ctankPercentage);
-    Blynk.virtualWrite(V11, cdistance);
-    Blynk.virtualWrite(V14, cwaterlevelAt);
-    
-    //Mini
-    Blynk.virtualWrite(V15, mtankPercentage);
-    Blynk.virtualWrite(V16, mdistance);
-    Blynk.virtualWrite(V19, mwaterlevelAt);
-  }
+  if(isBlynkPart1Complete == false) {
+    if(isDataReceived == true) 
+    {
+      blynkStatus = "";
+      Blynk.virtualWrite(V6, systemUptime);
+      Blynk.virtualWrite(V5, currentDate); 
+      
+      //Compressor
+      Blynk.virtualWrite(V0, tankPercentage);
+      Blynk.virtualWrite(V1, distance);
+      Blynk.virtualWrite(V4, waterlevelAt);
   
-    blynkStatus = "Blynk Upload Complete.. part1" + isDataReceived + currentDate;
-    terminal.println(blynkStatus);
-    terminal.println(tankPercentage);
-    terminal.println(ctankPercentage);
-    terminal.println(mtankPercentage);
-    Serial.println(blynkStatus);
-
-    const char* c_style_char_array = blynkStatus.c_str(); // Convert Arduino String to const char*
-    mqttclient.publish("device/complexuploadstatus/blynk", c_style_char_array);
-
+      //Cement
+      Blynk.virtualWrite(V10, ctankPercentage);
+      Blynk.virtualWrite(V11, cdistance);
+      Blynk.virtualWrite(V14, cwaterlevelAt);
+      
+      //Mini
+      Blynk.virtualWrite(V15, mtankPercentage);
+      Blynk.virtualWrite(V16, mdistance);
+      Blynk.virtualWrite(V19, mwaterlevelAt);
+    
+      blynkStatus = "Blynk Upload Complete.. part1" + isDataReceived + currentDate;
+      terminal.println(blynkStatus);
+      //terminal.println(tankPercentage);
+      //terminal.println(ctankPercentage);
+      //terminal.println(mtankPercentage);
+      Serial.println(blynkStatus);
+  
+      const char* c_style_char_array = blynkStatus.c_str(); // Convert Arduino String to const char*
+      //mqttclient.publish("device/complexuploadstatus/blynk", c_style_char_array);
+    }
+    else {
+      blynkStatus = "Blynk Upload Skipped..";
+      terminal.println(blynkStatus);
+      Serial.println(blynkStatus);
+    }
     isBlynkPart1Complete = true;
     isBlynkPart2Complete = false;
    }
@@ -251,30 +333,34 @@ void uploadtoBlynkPart1(){
 
 void uploadtoBlynkPart2(){
   if(isBlynkPart1Complete == true && isBlynkPart2Complete == false){
-    if(isDataReceived == true) {
     blynkStatus = "";
-
-    //Compressor
-    Blynk.virtualWrite(V2, consumedLitres);
-    Blynk.virtualWrite(V3, availableLitres);
-
-    //Mini
-    Blynk.virtualWrite(V17, mconsumedLitres);
-    Blynk.virtualWrite(V18, mavailableLitres);
-
-    //Cement
-    Blynk.virtualWrite(V12, cconsumedLitres);
-    Blynk.virtualWrite(V13, cavailableLitres);
-
-    Blynk.virtualWrite(V6, systemUptime);
-  }
-    blynkStatus = "Blynk Upload Complete.. Part2 " + isDataReceived + currentDate;
-    terminal.println(blynkStatus);
-    Serial.println(blynkStatus);
-
-    const char* c_style_char_array = blynkStatus.c_str(); // Convert Arduino String to const char*
-    mqttclient.publish("device/complexuploadstatus/blynk", c_style_char_array);
-
+      if(isDataReceived == true) {
+        //Compressor
+        Blynk.virtualWrite(V2, consumedLitres);
+        Blynk.virtualWrite(V3, availableLitres);
+    
+        //Mini
+        Blynk.virtualWrite(V17, mconsumedLitres);
+        Blynk.virtualWrite(V18, mavailableLitres);
+    
+        //Cement
+        Blynk.virtualWrite(V12, cconsumedLitres);
+        Blynk.virtualWrite(V13, cavailableLitres);
+    
+        Blynk.virtualWrite(V6, systemUptime);
+        
+        blynkStatus = "Blynk Upload Complete.. Part2 " + isDataReceived + currentDate;
+        terminal.println(blynkStatus);
+        Serial.println(blynkStatus);
+    
+        //const char* c_style_char_array = blynkStatus.c_str(); // Convert Arduino String to const char*
+        //mqttclient.publish("device/complexuploadstatus/blynk", c_style_char_array);
+    }
+    else {
+      blynkStatus = "Blynk Part2 Upload Skipped..";
+      terminal.println(blynkStatus);
+      Serial.println(blynkStatus);
+    }
     isBlynkPart1Complete = false;
     isBlynkPart2Complete = true;
    }
@@ -302,8 +388,8 @@ void uploadToThingSpeak()
   terminal.println("Thingspeak Upload Status.. " + thingspeakStatus);
   terminal.flush();
     
-  const char* c_style_char_array = thingspeakStatus.c_str(); // Convert Arduino String to const char*
-  mqttclient.publish("device/complexuploadstatus/thinkspeak", c_style_char_array);
+  //const char* c_style_char_array = thingspeakStatus.c_str(); // Convert Arduino String to const char*
+  //mqttclient.publish("device/complexuploadstatus/thinkspeak", c_style_char_array);
 }
 
 void uploadToThingSpeakPart1()
@@ -334,8 +420,8 @@ void uploadToThingSpeakPart1()
         thingspeakStatus = thingspeakStatus + currentDate;
         terminal.println("Thingspeak Upload Status.. " + thingspeakStatus);
         terminal.flush();
-        const char* c_style_char_array = thingspeakStatus.c_str(); // Convert Arduino String to const char*
-        mqttclient.publish("device/complexuploadstatus/thinkspeak", c_style_char_array);
+        //const char* c_style_char_array = thingspeakStatus.c_str(); // Convert Arduino String to const char*
+        //mqttclient.publish("device/complexuploadstatus/thinkspeak", c_style_char_array);
   
     isThingPart1Complete = true;
     isThingPart2Complete = false;  
@@ -366,8 +452,8 @@ void uploadToThingSpeakPart2()
       thingspeakStatus = thingspeakStatus + currentDate;
       terminal.println("Thingspeak Upload Status.. " + thingspeakStatus);
       terminal.flush();
-      const char* c_style_char_array = thingspeakStatus.c_str(); // Convert Arduino String to const char*
-      mqttclient.publish("device/complexuploadstatus/thinkspeak", c_style_char_array);
+      //const char* c_style_char_array = thingspeakStatus.c_str(); // Convert Arduino String to const char*
+      //mqttclient.publish("device/complexuploadstatus/thinkspeak", c_style_char_array);
   
      isThingPart1Complete = false;
      isThingPart2Complete = true;  
@@ -410,7 +496,7 @@ void PublishMQTT(){
     Serial.print("Publish message: ");
     Serial.println(msg);
     const char* c_style_char_array = receivedJson.c_str(); // Convert Arduino String to const char*
-    mqttclient.publish("device/complexpayload", c_style_char_array);
+    //mqttclient.publish("device/complexpayload", c_style_char_array);
   }
 }
 
@@ -419,15 +505,14 @@ void loop() {
   Blynk.run();
 
   //Aurdino COllection.
-  ExtractSensorData();
+  //ExtractSensorData();
   
   // Initiates SimpleTimer
   systemTimer.run();
   uploadThingSpeakTimer.run();
   uploadBlynkTimer.run();
-
-  if (!mqttclient.connected()) {
-    reconnect();
-  }
-  mqttclient.loop();
+  extractSensorDataTimer.run();
+  
+  //mqttHealthProbe.run();
+  //publishMqtttimer.run(); 
 }

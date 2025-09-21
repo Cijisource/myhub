@@ -334,12 +334,23 @@ void loop() {
   // put your main code here, to run repeatedly:
   long uptimesec = millis()/1000;
   doc["aurdinouptimesec"] = uptimesec; // Add another key-value pair
+
+  Serial.println("-----<<Start>>-----");
   doc = checkWaterLevelInCompressorTank(doc);
+  delay(400);
   doc = checkWaterLevelInCementTank(doc);
+  delay(400);
   doc = checkWaterLevelInMiniTank(doc);
+  delay(400);
+  Serial.println("----<<END>>------");
+  
   doc["AurdinoFirmware"] = DEVICE_SOFTWARE;
+  
+  //String output;
+  //serializeJson(doc, output);
+  //Serial.println(output);
 
   serializeJson(doc, espSerial); // Send JSON over Serial
   espSerial.println(); // Add a newline for easier parsing on ESP8266
-  delay(400);
+  delay(1000);
 }
