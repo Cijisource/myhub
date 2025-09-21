@@ -36,9 +36,17 @@ bool isThingPart2Complete = false;
 bool isBlynkPart1Complete = false;
 bool isBlynkPart2Complete = false;
 
+unsigned long errorTimecompressor = 0;
+unsigned long errorTimecement = 0;
+unsigned long errorTimemini = 0;
+
+bool errorDetectedcompressor = false;
+bool errorDetectedcement = false;
+bool errorDetectedmini = false;
+  
 String currentDate;
-long distance, cdistance, mdistance, lastDistance;;
-int tankPercentage, ctankPercentage, mtankPercentage;
+long distance, tmpdistance, cdistance, tmpcdistance, mdistance, tmpmdistance, lastDistance;;
+int tankPercentage, tmptankPercentage, ctankPercentage, tmpctankPercentage, mtankPercentage, tmpmtankPercentage;
 float availableLitres, cavailableLitres, mavailableLitres, waterlevelAt, cwaterlevelAt, mwaterlevelAt; 
 float consumedLitres, cconsumedLitres, mconsumedLitres;
 int isSlow, isShigh, isClow, isChigh, isMlow, isMhigh;
