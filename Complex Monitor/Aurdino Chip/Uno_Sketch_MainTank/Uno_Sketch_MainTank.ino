@@ -16,7 +16,9 @@
 // Connect Arduino's SoftwareSerial RX to ESP8266's TX (through a voltage divider if necessary, as ESP8266 is 3.3V)
 SoftwareSerial espSerial(2, 13); // RX, TX pins
 
-StaticJsonDocument<200> doc; // Allocate a static JSON document
+const size_t capacity = 1024;
+DynamicJsonDocument doc(capacity); // Allocate a static JSON document
+
 float stankheight = 106; //cms
 long scalibrationvalue = 6;//33;
 long ssensorrestorecalibration;
@@ -49,7 +51,7 @@ void setup() {
   Serial.println("Arduino ready to send data.");
 }
 
-StaticJsonDocument<200> checkWaterLevelInCompressorTank(StaticJsonDocument<200> root) {
+DynamicJsonDocument checkWaterLevelInCompressorTank(DynamicJsonDocument &root) {
   long duration, distance;
   int tanklevelpercentage = 0;
 
@@ -131,7 +133,7 @@ StaticJsonDocument<200> checkWaterLevelInCompressorTank(StaticJsonDocument<200> 
   return root;
 }
 
-StaticJsonDocument<200> checkWaterLevelInCementTank(StaticJsonDocument<200> root) {
+DynamicJsonDocument checkWaterLevelInCementTank(DynamicJsonDocument &root) {
   long duration, distance;
   int tanklevelpercentage = 0;
 
@@ -216,7 +218,7 @@ StaticJsonDocument<200> checkWaterLevelInCementTank(StaticJsonDocument<200> root
   return root;
 }
 
-StaticJsonDocument<200> checkWaterLevelInMiniTank(StaticJsonDocument<200> root) {
+DynamicJsonDocument checkWaterLevelInMiniTank(DynamicJsonDocument &root) {
   long duration = 0, distance = 0;
   int tanklevelpercentage = 0;
 
