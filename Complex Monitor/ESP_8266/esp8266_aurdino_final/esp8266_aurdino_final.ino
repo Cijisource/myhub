@@ -86,7 +86,8 @@ void ExtractSensorData() {
     Serial.println(receivedJson);
     
     //Deserialization Logic.
-    DeserializationError error = deserializeJson(doc, receivedJson);
+    DynamicJsonDocument tmpdoc(capacity); //Extracted Source Object.. 
+    DeserializationError error = deserializeJson(tmpdoc, receivedJson);
     if (error) {
       Serial.print(F("deserializeJson() failed: "));
       Serial.println(error.f_str());
@@ -102,18 +103,18 @@ void ExtractSensorData() {
     //Successfull serial received.
     isDataReceived = true;
 
-    //docc check
-    doc = DataReceivedZeroRecoverPreviousDoc(doc, doc, errorDetectedcompressor, errorTimecompressor, "SensorDistance");
+    //docc check and restore with old doc..
+    doc = DataReceivedZeroRecoverPreviousDoc(tmpdoc, doc, errorDetectedcompressor, errorTimecompressor, "mainstream");
 
     // Extract data
     systemUptime = doc["aurdinouptimesec"];
 
     //Compressor
-    tmpdistance = doc["SensorDistance"];
-    distance = DataReceivedZeroRecoverPrevious(tmpdistance, distance, errorDetectedcompressor, errorTimecompressor, "SensorDistance");
+    distance = doc["SensorDistance"];
+    //distance = DataReceivedZeroRecoverPrevious(tmpdistance, distance, errorDetectedcompressor, errorTimecompressor, "SensorDistance");
 
-    tmptankPercentage = doc["TankLevelPercentage"];
-    tankPercentage = DataReceivedZeroRecoverPrevious(tmptankPercentage, tankPercentage, errorDetectedcompressor, errorTimecompressor, "TankLevelPercentage");
+    tankPercentage = doc["TankLevelPercentage"];
+    //tankPercentage = DataReceivedZeroRecoverPrevious(tmptankPercentage, tankPercentage, errorDetectedcompressor, errorTimecompressor, "TankLevelPercentage");
 
     availableLitres = doc["AvailableLitres"];
     consumedLitres = doc["ConsumedLitres"];
@@ -126,11 +127,11 @@ void ExtractSensorData() {
     }
     
     //Cement
-    tmpcdistance = doc["CSensorDistance"];
-    cdistance = DataReceivedZeroRecoverPrevious(tmpcdistance, cdistance, errorDetectedcement, errorTimecement, "CSensorDistance");
+    cdistance = doc["CSensorDistance"];
+    //cdistance = DataReceivedZeroRecoverPrevious(tmpcdistance, cdistance, errorDetectedcement, errorTimecement, "CSensorDistance");
 
-    tmpctankPercentage = doc["CTankLevelPercentage"];
-    ctankPercentage = DataReceivedZeroRecoverPrevious(tmpctankPercentage, ctankPercentage, errorDetectedcement, errorTimecement, "CTankLevelPercentage");
+    ctankPercentage = doc["CTankLevelPercentage"];
+    //ctankPercentage = DataReceivedZeroRecoverPrevious(tmpctankPercentage, ctankPercentage, errorDetectedcement, errorTimecement, "CTankLevelPercentage");
 
     cavailableLitres = doc["CAvailableLitres"];
     cconsumedLitres = doc["CConsumedLitres"];
@@ -142,11 +143,11 @@ void ExtractSensorData() {
     }
     
     //Mini
-    tmpmdistance = doc["MSensorDistance"];
-    mdistance = DataReceivedZeroRecoverPrevious(tmpmdistance, mdistance, errorDetectedmini, errorTimemini, "MSensorDistance");
+    mdistance = doc["MSensorDistance"];
+    //mdistance = DataReceivedZeroRecoverPrevious(tmpmdistance, mdistance, errorDetectedmini, errorTimemini, "MSensorDistance");
 
-    tmpmtankPercentage = doc["MTankLevelPercentage"];
-    mtankPercentage = DataReceivedZeroRecoverPrevious(tmpmtankPercentage, mtankPercentage, errorDetectedmini, errorTimemini, "MTankLevelPercentage");
+    mtankPercentage = doc["MTankLevelPercentage"];
+    //mtankPercentage = DataReceivedZeroRecoverPrevious(tmpmtankPercentage, mtankPercentage, errorDetectedmini, errorTimemini, "MTankLevelPercentage");
 
     mavailableLitres = doc["MAvailableLitres"];
     mconsumedLitres = doc["MConsumedLitres"];
@@ -231,6 +232,12 @@ DynamicJsonDocument DataReceivedZeroRecoverPreviousDoc(DynamicJsonDocument value
   if (errorDetected && millis() - errorTime >= 5000) {
     // Attempt to update variable
     errorDetected = false;
+    errorCount = errorCount + 1;
+
+    //Reset error count to 0 afte 80k seconds and 12count..
+    if(errorCount >= 12 && millis() - errorTime >= 80000) {
+      errorCount = 0;
+    }
     Serial.print("Variable updated after delay: ");
     
     if(islogsEnabled == true) {
@@ -243,6 +250,13 @@ DynamicJsonDocument DataReceivedZeroRecoverPreviousDoc(DynamicJsonDocument value
 }
 
 bool CheckDataZeroDoc(DynamicJsonDocument incomingDoc) {
+  tmpdistance = incomingDoc["SensorDistance"];
+  tmpcdistance = doc["CSensorDistance"];
+  tmpmdistance = doc["MSensorDistance"];
+
+  if(tmpdistance == 0 && tmpcdistance == 0 && tmpmdistance == 0) {
+    return true;
+  }
   return false;
 }
 

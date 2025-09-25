@@ -39,6 +39,7 @@ bool isBlynkPart2Complete = false;
 unsigned long errorTimecompressor = 0;
 unsigned long errorTimecement = 0;
 unsigned long errorTimemini = 0;
+unsigned long errorCount = 0;
 
 bool errorDetectedcompressor = false;
 bool errorDetectedcement = false;
